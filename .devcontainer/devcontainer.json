@@ -1,0 +1,27 @@
+{
+  "name": "fomc-hawkish-dovish",
+  "remoteEnv": {
+    "SHELL": "/usr/bin/zsh",
+    "GIT_EMAIL": "opottghjk00@gmail.com",
+    "GIT_NAME": "Hsiu-Hsuan(Jacky) Yeh",
+    "PATH": "${containerEnv:PATH}:/root/.local/bin:/usr/local/cuda-12.4/bin",
+    "LD_LIBRARY_PATH": "${containerEnv:LD_LIBRARY_PATH}:/usr/local/cuda-12.4/targets/x86_64-linux/lib"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/va-h/devcontainers-features/uv:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/sshd:1": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/georgofenbeck/features/lazygit-linuxbinary:1": {},
+    "ghcr.io/devcontainers-contrib/features/neovim-apt-get:1": {
+      "version": "latest"
+    }
+  },
+  "dockerComposeFile": "docker-compose.yaml",
+  "service": "devcontainer",
+  "workspaceFolder": "/fomc-hawkish-dovish",
+  "postCreateCommand": "chmod +x .devcontainer/post-create-command.sh && ./.devcontainer/post-create-command.sh"
+}

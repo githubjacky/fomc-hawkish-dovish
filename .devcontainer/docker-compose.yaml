@@ -1,0 +1,25 @@
+x-volume-deploy: &volume-deploy
+  volumes:
+    - type: bind
+      source: ..
+      target: /fomc-hawkish-dovish
+    - type: bind
+      source: /usr/local/cuda-12.4
+      target: /usr/local/cuda-12.4
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+
+services:
+  devcontainer:
+    <<: *volume-deploy
+    build:
+      context: .
+      dockerfile: devcontainer_Dockerfile
+    # this command is referred to https://github.com/loft-sh/devpod/issues/955#issue-2177966943
+    command: /bin/sh -c "trap :; TERM INT; sleep infinity & wait"

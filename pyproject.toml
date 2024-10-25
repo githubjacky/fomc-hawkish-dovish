@@ -1,0 +1,18 @@
+[project]
+name = "fomc-hawkish-dovish"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "datasets>=3.0.2",
+    "flair>=0.14.0",
+    "hydra-core>=1.3.2",
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+    "lightning>=2.4.0",
+    "polars[gpu]>=1.11.0",
+    "sentence-transformers>=3.2.1",
+    "torch>=2.5.0",
+    "umap-learn>=0.5.6",
+]
