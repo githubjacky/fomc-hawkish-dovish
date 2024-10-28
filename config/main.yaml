@@ -6,28 +6,51 @@ flair_embed:
   flair_layers: all
   flair_layer_mean: true
 
-device: cuda:0
-model: RNN
-lr: 0.01
-batch_size: 256
+sbert_embed:
+  model_name: sentence-transformers/all-mpnet-base-v2 
+
+nn: GRU
+# should adjust only in sentence-level classification
+# for word-level, flair's word embeddings is the only choice
+embed_framework: flair
+lr: 0.0003
+batch_size: 64
 random_state: 1126
 
+early_stop:
+  monitor: val/loss
+  mode: min
+  patience: 20
+
+model_check_point:
+  monitor: val/loss
+  mode: min
+
+trainer:
+  accelerator: gpu
+  strategy: auto
+  devices:
+    - 0
+  num_nodes: 1
+  precision: 32-true
+  max_epochs: 100
+  log_every_n_steps: 1
+  check_val_every_n_epoch: 3
+  # accumulate_grad_batches:
+  # gradient_clip_val:
+
 tuning:
-  n_trials: 10
+  study_name: test
+  n_trials: 1
 
 RNNFamily:
   hidden_size: 128
-  num_layers: 1
-  dropout: 0.0
-  bidirectional: false
+  num_layers: 2
+  dropout: 0.3
+  bidirectional: True
 
 MLP:
   hidden_size: 256
   n_layers: 1
   dropout: 0.2
   output_size: 128
-
-trainer:
-  max_epochs: 2
-  log_every_n_steps: 1
-  check_val_every_n_epoch: 1

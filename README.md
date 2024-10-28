@@ -1,8 +1,11 @@
 # fomc-hawkish-dovish
+
+
 ---
-
 ## Text Classifier
+To run a experment, a optuna study, run:
+```sh
+python src/classifier/train.py
+```
 
-## Hawkish-dovish Index
-
-## Conclusion
+Configurations can be modifed through `config/main.yaml`

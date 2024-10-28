@@ -17,14 +17,16 @@ from flair.embeddings import (
 import lightning as L
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from sklearn.utils.class_weight import compute_class_weight
 import torch
 from torch.utils.data import DataLoader, Subset
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, PackedSequence
+from transformers import AutoConfig
 from typing import List, Dict, Literal
 
 
 class BaseDataModule(L.LightningDataModule):
-    def __init__(self, batch_size: int = 256):
+    def __init__(self, batch_size: int, embed_model_name: str):
         """
         If one only wants to use the last layers, `flair_layers` should be
         specified as "-1". Moreover, `flar_layers` = "-1,-2" means the last
@@ -38,7 +40,12 @@ class BaseDataModule(L.LightningDataModule):
         self.batch_size = batch_size
 
         # it's identified in subclass
+        self.embed_model_name = embed_model_name
         self.embed_model = None
+
+    @property
+    def embed_dimension(self):
+        return AutoConfig.from_pretrained(self.embed_model_name).hidden_size
 
 
     # download dataset
@@ -61,6 +68,17 @@ class BaseDataModule(L.LightningDataModule):
 
         self.len_train_data = len(train_idx)
         self.len_val_data = len(val_idx)
+
+
+    @property
+    def sklearn_class_weight(self) -> torch.Tensor:
+        y = []
+        for i in range(len(self.train_data)):
+            item = self.train_data[[i]]
+            y.append(item["label"][0])
+        weights = compute_class_weight(class_weight="balanced", classes=np.unique(y), y=y)
+
+        return torch.tensor(weights, dtype=torch.float).cuda()
 
 
     # it's defined in subclass
@@ -97,11 +115,11 @@ class BaseDataModule(L.LightningDataModule):
 
 
     def val_dataloader(self):
-        return DataLoader(self.val_data, batch_size=self.len_val_data, collate_fn=self.collate_fn)
+        return DataLoader(self.val_data, batch_size=self.batch_size, collate_fn=self.collate_fn)
 
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.len_test_dataset, collate_fn=self.collate_fn)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, collate_fn=self.collate_fn)
 
 
 class MLPDataModule(BaseDataModule):
@@ -112,7 +130,7 @@ class MLPDataModule(BaseDataModule):
                  flair_layers: str = "all",
                  flair_layer_mean = True):
 
-        super().__init__(batch_size)
+        super().__init__(batch_size, embed_model_name)
 
         self.embed_model = (
             TransformerDocumentEmbeddings(
@@ -156,12 +174,12 @@ class RNNFamilyDataModule(BaseDataModule):
                  flair_layers: str = "all",
                  flair_layer_mean = True):
 
-        super().__init__(batch_size, embed_model_name, flair_layers, flair_layer_mean)
+        super().__init__(batch_size, embed_model_name)
 
         self.embed_model = TransformerWordEmbeddings(
-                embed_model_name,
-                layers = flair_layers,
-                layer_mean = flair_layer_mean
+            embed_model_name,
+            layers = flair_layers,
+            layer_mean = flair_layer_mean
         )
 
 
