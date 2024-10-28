@@ -6,13 +6,11 @@ data and validation. Moreover, how batch of data is collated during the forward 
 included.
 
 
----
 ## Define the Class of `model`
 
 A `model` class is the subclass of `L.LightningModule` in which we define how to stack the neural network defined in `nn.py` and what should be logged.
 
 
----
 ## Run `train.py`
 
 In `train.py` we create all required objects to train a classifer, including data module, `model`
