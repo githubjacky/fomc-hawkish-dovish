@@ -1,6 +1,8 @@
 defaults:
   - _self_
 
+mode: tune
+
 flair_embed:
   model_name: bert-base-uncased
   flair_layers: all
@@ -18,13 +20,13 @@ batch_size: 64
 random_state: 1126
 
 early_stop:
-  monitor: val/loss
-  mode: min
-  patience: 1
+  monitor: val/macro_avg_prec
+  mode: max
+  patience: 10
 
 model_check_point:
-  monitor: val/loss
-  mode: min
+  monitor: val/macro_avg_prec
+  mode: max
 
 trainer:
   accelerator: gpu
@@ -40,7 +42,7 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: test
+  study_name: bet_base_embed_gru
   n_trials: 1
 
 RNNFamily:
