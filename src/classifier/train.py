@@ -3,6 +3,11 @@
 # logger, how to save model checkpoints, when to early stop and configuring the progress bar, etc. 
 # Moreover, the file serves as the entry point to lauch the training procedure, incoporating the
 # data module with stacked nn architectures.
+# 
+# To train a classifier, we need to set up data module, `model` and `trainer`. After setting up
+# we can fit the model and then test the model.
+#
+# - `model` is the object of the L.LightningModule's subclass` defind in model.py
 ####################################################################################################
 
 
@@ -12,22 +17,14 @@ from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning.pytorch.callbacks import ModelCheckpoint, TQDMProgressBar
 from lightning.pytorch.loggers import WandbLogger
 import numpy as np
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from sklearn.model_selection import train_test_split
 
 from data_module import RNNFamilyDataModule, MLPDataModule
 from model import RNNFamily, HawkishDovishClassifier
 
 
-@hydra.main(config_path="../../config", config_name="main", version_base=None)
-def train(cfg: DictConfig):
-    """
-    To train a classifier, we need to set up data module, `model` and `trainer`. After setting up
-    we can fit the model and then test the model.
-
-    - `model` is the object of the L.LightningModule's subclass` defind in model.py
-    """
-    # task 1: setup data module
+def setup_dm(cfg: DictConfig):
     dm = (
         # `RNNFamily` can only use flair's word embeddings
         RNNFamilyDataModule(
@@ -55,18 +52,20 @@ def train(cfg: DictConfig):
     )
     dm.prepare_data()
 
-    # task2: set up `model` for `trainer``
     train_idx, val_idx = train_test_split(
         np.arange(len(dm.train_dataset)),
-        test_size=0.2,
-        stratify=dm.train_dataset["label"],
-        random_state=cfg.random_state
+        test_size = 0.2,
+        stratify = dm.train_dataset["label"],
+        random_state = cfg.random_state
     )
     dm.setup(train_idx, val_idx)
 
-    # task 2 setup nn
-    nn = (
-        RNNFamily(
+    return dm
+
+
+def setup_model(dm, cfg: DictConfig):
+    if cfg.nn in ["RNN", "GRU", "LSTM"]:
+        nn = RNNFamily(
             cfg.nn,
             input_size = dm.embed_dimension,
             hidden_size = cfg.RNNFamily.hidden_size,
@@ -74,19 +73,20 @@ def train(cfg: DictConfig):
             dropout = cfg.RNNFamily.dropout,
             bidirectional = cfg.RNNFamily.bidirectional
         )
-        if cfg.nn != "MLP"
-        else
-        # TODO
-        None
-    )
-    model = HawkishDovishClassifier(cfg, nn, dm.sklearn_class_weight)
+        nn_hparam = OmegaConf.to_container(cfg.RNNFamily)
 
-    # task3: configure the trainer
+    model = HawkishDovishClassifier(nn, cfg.lr, dm.sklearn_class_weight, **nn_hparam)
+
+    return model
+
+
+def setup_trainer(model, cfg: DictConfig):
     wandb_logger = WandbLogger(
         project = "fomc-hawkish-dovish",
         # log model once the checkpoint is created
         log_model = "all",
-        group = cfg.tuning.study_name
+        group = cfg.tuning.study_name,
+        save_dir = "wandb"
     )
     wandb_logger.watch(model, log="all")
 
@@ -117,10 +117,19 @@ def train(cfg: DictConfig):
         # accumulate_grad_batches =
         # gradient_clip_val = 
     )
-    trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
 
+    return trainer
+
+
+@hydra.main(config_path="../../config", config_name="main", version_base=None)
+def main(cfg: DictConfig):
+    dm = setup_dm(cfg)
+    model = setup_model(dm, cfg)
+    trainer = setup_trainer(model, cfg)
+
+    trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
     trainer.test(dataloaders=dm.test_dataloader(), ckpt_path='best')
 
 
 if __name__ == "__main__":
-    train()
+    main()

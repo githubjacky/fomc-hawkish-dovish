@@ -8,54 +8,54 @@
 
 from functools import cached_property
 import lightning as L
-from omegaconf import DictConfig
 import torch
 from torch.nn import Linear, Softmax
 import torch.nn.functional as F
 from torchmetrics.classification import PrecisionRecallCurve, AveragePrecision, Precision, Recall
 from typing import Optional
 
-
 from metrics import ClassificationMetricsLogger
 from nn import RNNFamily
 
 
 class HawkishDovishClassifier(L.LightningModule):
-    def __init__(self, hparam: DictConfig, model, class_weights: Optional[torch.Tensor] = None):
+    def __init__(self, model, lr, class_weights: Optional[torch.Tensor] = None, **nn_hparam):
         """
         The type of `model` is the subclass of `nn.Module`, i.e., nn.RNN.
         """
         super().__init__()
         # avoid: Attribute 'model' is an instance of `nn.Module` and is already saved during 
         # checkpointing. It is recommended to ignore them using `self.save_hyperparameters(ignore=['model'])`.
-        self.save_hyperparameters(ignore=['model'])  # save the input arguments to wandb
-        self.hparam = hparam
+        self.save_hyperparameters(ignore=['model'])
         self.model = model
+        self.lr = lr
         self.clas_weights = class_weights
 
-        # 3 is the number of classes
+
         if type(model) == RNNFamily:
             hidden_size = (
                 # concat the first and the last hidden state, both's size are double as each of
                 # which concate the output from two directions.
-                hparam.RNNFamily.hidden_size * 4
-                if hparam.RNNFamily.bidirectional
+                nn_hparam["hidden_size"] * 4
+                if nn_hparam["bidirectional"]
                 else
                 # only use the last hidden state
-                hparam.RNNFamily.hidden_size
+                nn_hparam["hidden_size"]
             )
         else:
-            hidden_size = hparam.MLP.output_size
-    
-        self.linear = Linear(hidden_size, 3)
+            #TODO
+            pass
+
+        num_classes = 3
+        self.linear = Linear(hidden_size, num_classes)
         self.softmax = Softmax(dim=-1)
 
         # validation and test metrics
-        self.pr_curve = PrecisionRecallCurve("multiclass", num_classes=3)
-        self.macro_ap = AveragePrecision("multiclass", num_classes=3, average="macro")
-        self.ap = AveragePrecision("multiclass", num_classes=3, average=None)
-        self.prec = Precision("multiclass", num_classes=3, average=None)
-        self.recall = Recall("multiclass", num_classes=3, average=None)
+        self.pr_curve = PrecisionRecallCurve("multiclass", num_classes=num_classes)
+        self.macro_ap = AveragePrecision("multiclass", num_classes=num_classes, average="macro")
+        self.ap = AveragePrecision("multiclass", num_classes=num_classes, average=None)
+        self.prec = Precision("multiclass", num_classes=num_classes, average=None)
+        self.recall = Recall("multiclass", num_classes=num_classes, average=None)
 
 
     @cached_property
@@ -76,7 +76,7 @@ class HawkishDovishClassifier(L.LightningModule):
 
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.hparam.lr)
+        return torch.optim.Adam(self.parameters(), self.lr)
 
 
     def training_step(self, batch, batch_idx):

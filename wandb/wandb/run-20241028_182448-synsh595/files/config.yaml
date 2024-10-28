@@ -1,0 +1,1135 @@
+_wandb:
+    value:
+        cli_version: 0.18.5
+        m:
+            - "1": parameters/model.model.bias_ih_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": trainer/global_step
+              "6":
+                - 3
+              "7": []
+            - "1": gradients/linear.weight.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.bias.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/linear.bias.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/recall_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.bias.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/ap_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/prec_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.weight._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/ap_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/loss
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/prec_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/ap_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/prec_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": epoch
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/prec_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.sha256
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/prec_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.bias._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/linear.weight.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/recall_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/ap_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/recall_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.size
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_neutral.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.weight.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/macro_avg_prec
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/ap_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/recall_dovish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_ih_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/recall_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/macro_avg_prec
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/linear.weight.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_neutral.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": train/loss
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l1.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l0._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_hh_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l0.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/linear.bias.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/linear.bias._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l1_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_hawkish.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_hawkish.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/prec_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l0_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/linear.weight._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": val/pr_curve_dovish._latest_artifact_path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_hh_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_hh_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.ncols
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.nrows
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.weight_ih_l1_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/ap_hawkish
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l0.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.weight_hh_l0_reverse._type
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": gradients/model.model.bias_ih_l0_reverse.bins
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": parameters/model.model.bias_ih_l1_reverse.values
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/recall_neutral
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": test/pr_curve_dovish.path
+              "5": 2
+              "6":
+                - 1
+                - 3
+              "7": []
+        python_version: 3.11.10
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 44
+                - 49
+                - 50
+                - 51
+                - 53
+                - 55
+                - 71
+                - 75
+                - 106
+            "2":
+                - 1
+                - 5
+                - 11
+                - 44
+                - 49
+                - 50
+                - 51
+                - 53
+                - 55
+                - 71
+                - 75
+                - 106
+            "3":
+                - 1
+                - 7
+                - 23
+                - 55
+                - 66
+            "4": 3.11.10
+            "5": 0.18.5
+            "6": 4.46.0
+            "8":
+                - 5
+            "12": 0.18.5
+            "13": linux-x86_64
+bidirectional:
+    value: true
+class_weights:
+    value: tensor([1.2840, 1.3426, 0.6773], device='cuda:0')
+dropout:
+    value: 0.3
+hidden_size:
+    value: 128
+lr:
+    value: 0.0003
+num_layers:
+    value: 2
