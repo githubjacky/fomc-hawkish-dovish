@@ -22,7 +22,7 @@ random_state: 1126
 early_stop:
   monitor: val/macro_avg_prec
   mode: max
-  patience: 10
+  patience: 20
 
 model_check_point:
   monitor: val/macro_avg_prec
@@ -42,8 +42,8 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: bet_base_embed_gru
-  n_trials: 1
+  study_name: bert_base_embed_gru
+  n_trials: 100
 
 RNNFamily:
   hidden_size: 128

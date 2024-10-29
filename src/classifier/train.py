@@ -21,6 +21,7 @@ from omegaconf import DictConfig, OmegaConf
 import optuna
 from sklearn.model_selection import train_test_split
 from typing import Optional
+import wandb
 
 from data_module import RNNFamilyDataModule, MLPDataModule
 from model import RNNFamily, HawkishDovishClassifier
@@ -126,55 +127,15 @@ def setup_trainer(model, cfg: DictConfig):
     return trainer
 
 
-# do not tune hyperparmeters, purely training
-def train(cfg: DictConfig):
+@hydra.main(config_path="../../config", config_name="main", version_base=None)
+def main(cfg: DictConfig):
     dm = setup_dm(cfg)
     model = setup_model(dm, cfg)
     trainer = setup_trainer(model, cfg)
 
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
+    trainer.test(dataloaders=dm.test_dataloader(), ckpt_path='best')
 
-    score = trainer.checkpoint_callback.best_model_score.item()
-    print(score)
-    print(type(score))
-    # trainer.test(dataloaders=dm.test_dataloader(), ckpt_path='best')
-
-
-
-@hydra.main(config_path="../../config", config_name="main", version_base=None)
-def main(cfg: DictConfig):
-    if cfg.mode == "train":
-        train(cfg)
-    else:
-        study = optuna.create_study(storage="sqlite:///db.sqlite3", study_name=cfg.tuning.study_name)
-
-        def objective(trial):
-            batch_size = trial.suggest_int("batch_size", 32, 256)
-            dm = setup_dm(cfg, batch_size)
-
-            if cfg.nn in ["RNN", "GRU", "LSTM"]:
-                param = {
-                    "hidden_size": trial.suggest_int("hidden_size", 64, 256),
-                    "num_layers": trial.suggest_int("num_layers", 1, 20),
-                    "dropout": trial.suggest_float("dropout", 0.1, 0.9)
-                }
-
-                nn = RNNFamily(
-                    cfg.nn,
-                    input_size = dm.embed_dimension,
-                    bidirectional = cfg.RNNFamily.bidirectional,
-                    **param
-                )
-                nn_hparam = param | {"bidirectional": cfg.RNNFamily.bidirectional}
-            
-            model = HawkishDovishClassifier(nn, cfg.lr, dm.sklearn_class_weight, **nn_hparam)
-
-            trainer = setup_trainer(model, cfg)
-            trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
-
-            return trainer.checkpoint_callback.best_model_score.item()
-
-        study.optimize(objective, n_trials=cfg.tuning.n_trials)
 
 if __name__ == "__main__":
     main()
