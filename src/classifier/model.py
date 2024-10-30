@@ -31,7 +31,6 @@ class HawkishDovishClassifier(L.LightningModule):
         self.lr = lr
         self.clas_weights = class_weights
 
-
         if type(model) == RNNFamily:
             hidden_size = (
                 # concat the first and the last hidden state, both's size are double as each of

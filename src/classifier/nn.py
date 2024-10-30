@@ -15,34 +15,20 @@ class RNNFamily(Module):
                  ):
         super().__init__()
 
-        if model_name == "RNN":
-            self.model = RNN(
-                input_size = input_size,
-                hidden_size = hidden_size,
-                num_layers = num_layers,
-                batch_first = True,
-                dropout = dropout,
-                bidirectional = bidirectional
-            )
-        elif model_name == "GRU":
-            self.model = GRU(
-                input_size = input_size,
-                hidden_size = hidden_size,
-                num_layers = num_layers,
-                batch_first = True,
-                dropout = dropout,
-                bidirectional = bidirectional
-            )
-        else:
-            self.model = LSTM(
-                input_size = input_size,
-                hidden_size = hidden_size,
-                num_layers = num_layers,
-                batch_first = True,
-                dropout = dropout,
-                bidirectional = bidirectional
-            )
-
+        rnn_variants = {
+            "RNN": RNN,
+            "GRU": GRU,
+            "LSTM": LSTM
+        }
+        self.model = rnn_variants[model_name](
+            input_size = input_size,
+            hidden_size = hidden_size,
+            num_layers = num_layers,
+            batch_first = True,
+            dropout = dropout,
+            bidirectional = bidirectional
+        )
+      
         # decide in forward pass wheter to concatenate the first and the last hidden state   
         self.bidirectional = bidirectional
 
