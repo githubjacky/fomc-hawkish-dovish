@@ -32,7 +32,7 @@ trainer:
   accelerator: gpu
   strategy: auto
   devices:
-    - 0
+    - 2
   num_nodes: 1
   precision: 32-true
   max_epochs: 1000
