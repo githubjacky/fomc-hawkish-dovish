@@ -36,6 +36,7 @@ class Tuner:
             storage = "sqlite:///db.sqlite3", 
             study_name = self.cfg.tuning.study_name,
             pruner = optuna.pruners.MedianPruner(),
+            load_if_exists=True,
             direction = "maximize" if self.cfg.model_check_point.mode == "max" else "minimize"
         )
         study.optimize(self.objective, n_trials=self.cfg.tuning.n_trials)
