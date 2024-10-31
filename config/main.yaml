@@ -32,7 +32,7 @@ trainer:
   accelerator: gpu
   strategy: auto
   devices:
-    - 2
+    - 1
   num_nodes: 1
   precision: 32-true
   max_epochs: 1000
@@ -42,7 +42,7 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: bert_base_embed_gru_ff
+  study_name: bert_base_embed_gru_dropout_last_ff
   n_trials: 100
 
 RNNFamily:

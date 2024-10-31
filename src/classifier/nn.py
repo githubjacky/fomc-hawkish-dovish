@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Module, RNN, GRU, LSTM
+from torch.nn import Module, RNN, GRU, LSTM, Dropout
 from torch.nn.utils.rnn import pad_packed_sequence, PackedSequence
 from typing import Literal
 
@@ -29,6 +29,9 @@ class RNNFamily(Module):
             dropout = dropout,
             bidirectional = bidirectional
         )
+
+        # dropout of the last output layer
+        self.dropout = Dropout(dropout)
       
         # decide in forward pass wheter to concatenate the first and the last hidden state   
         self.bidirectional = bidirectional
@@ -58,4 +61,4 @@ class RNNFamily(Module):
             ])
         )
 
-        return final_output
+        return self.dropout(final_output)
