@@ -25,6 +25,7 @@ class RNNFamily(Module):
             hidden_size = hidden_size,
             num_layers = num_layers,
             batch_first = True,
+            # introduces a Dropout layer on the outputs of each RNN layer except the last layer
             dropout = dropout,
             bidirectional = bidirectional
         )

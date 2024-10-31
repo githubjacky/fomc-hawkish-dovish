@@ -9,7 +9,7 @@
 from functools import cached_property
 import lightning as L
 import torch
-from torch.nn import Linear, Softmax
+from torch.nn import Linear, Softmax, Sequential, LayerNorm, ReLU, Dropout
 import torch.nn.functional as F
 from torchmetrics.classification import PrecisionRecallCurve, AveragePrecision, Precision, Recall
 from typing import Optional
@@ -31,6 +31,7 @@ class HawkishDovishClassifier(L.LightningModule):
         self.lr = lr
         self.clas_weights = class_weights
 
+        # hidden_size is the outputsize of `self.model`
         if type(model) == RNNFamily:
             hidden_size = (
                 # concat the first and the last hidden state, both's size are double as each of
@@ -46,6 +47,13 @@ class HawkishDovishClassifier(L.LightningModule):
             pass
 
         num_classes = 3
+        self.ff = Sequential(
+            LayerNorm(hidden_size),
+            Linear(hidden_size, nn_hparam["ff_hidden_size"]),
+            ReLU(),
+            Linear(nn_hparam["ff_hidden_size"], hidden_size),
+            Dropout(nn_hparam["ff_dropout"])
+        )
         self.linear = Linear(hidden_size, num_classes)
         self.softmax = Softmax(dim=-1)
 
@@ -69,6 +77,7 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def forward(self, X):
         outputs = self.model(X)
+        outputs = self.ff(outputs)
         logits = self.linear(outputs)
 
         return logits

@@ -42,7 +42,7 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: bert_base_embed_gru
+  study_name: bert_base_embed_gru_ff
   n_trials: 100
 
 RNNFamily:
@@ -56,3 +56,7 @@ MLP:
   n_layers: 1
   dropout: 0.2
   output_size: 128
+
+ff:
+  hidden_size: 
+  dropout: 

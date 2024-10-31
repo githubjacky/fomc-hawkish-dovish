@@ -23,6 +23,8 @@ class Tuner:
             nn_hparam = self.rnn_hparam(trial)
             nn = RNNFamily(self.cfg.nn, input_size = dm.embed_dimension, **nn_hparam)
 
+        nn_hparam = nn_hparam | self.ff_hparam(trial)
+
         model = HawkishDovishClassifier(nn, lr, dm.sklearn_class_weight, **nn_hparam)
         trainer = setup_trainer(model, self.cfg)
         trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
@@ -45,10 +47,20 @@ class Tuner:
     def rnn_hparam(self, trial: optuna.Trial):
         hparam = {
             "hidden_size": trial.suggest_int("hidden_size", 64, 256),
-            "num_layers": trial.suggest_int("num_layers", 1, 20),
-            "dropout": trial.suggest_float("dropout", 0.1, 0.9)
+            # "num_layers": trial.suggest_int("num_layers", 1, 20),
+            "num_layers": 1,
+            # "dropout": trial.suggest_float("dropout", 0.1, 0.9)
+            "dropout": 0.
         }
         hparam = hparam | {"bidirectional": self.cfg.RNNFamily.bidirectional}
+
+        return hparam
+    
+    def ff_hparam(self, trial: optuna.Trial):
+        hparam = {
+            "ff_hidden_size": trial.suggest_int("hidden_size", 512, 1024),
+            "ff_dropout": trial.suggest_float("dropout", 0.1, 0.9)
+        }
 
         return hparam
     
