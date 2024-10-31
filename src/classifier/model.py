@@ -9,7 +9,7 @@
 from functools import cached_property
 import lightning as L
 import torch
-from torch.nn import Linear, Softmax, Sequential, LayerNorm, ReLU, Dropout
+from torch.nn import Linear, Softmax, Sequential, LayerNorm, GELU, Dropout
 import torch.nn.functional as F
 from torchmetrics.classification import PrecisionRecallCurve, AveragePrecision, Precision, Recall
 from typing import Optional
@@ -50,7 +50,7 @@ class HawkishDovishClassifier(L.LightningModule):
         self.ff = Sequential(
             LayerNorm(hidden_size),
             Linear(hidden_size, nn_hparam["ff_hidden_size"]),
-            ReLU(),
+            GELU(),
             Linear(nn_hparam["ff_hidden_size"], hidden_size),
             Dropout(nn_hparam["ff_dropout"])
         )
