@@ -26,9 +26,9 @@ EOF
 git clone https://github.com/githubjacky/my-astronvim "$HOME"/.config/nvim
 
 # 4. install python dependencies
-if [ -f "pyproject.toml" ]; then
-    uv sync
-fi
+# if [ -f "pyproject.toml" ]; then
+#     uv sync
+# fi
 
 # 5. setup terminal utils
 wget https://gist.githubusercontent.com/githubjacky/20882d09ed0dd5d659a6b5a1336edbe8/raw/6a813ec5d58a85df9768a0ebc7f3a14dc3096efc/setup.sh &&
