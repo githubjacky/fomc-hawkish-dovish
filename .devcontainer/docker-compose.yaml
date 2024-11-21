@@ -22,4 +22,6 @@ services:
       context: .
       dockerfile: devcontainer_Dockerfile
     # this command is referred to https://github.com/loft-sh/devpod/issues/955#issue-2177966943
+    ports:
+      - "5000:5000"
     command: /bin/sh -c "trap :; TERM INT; sleep infinity & wait"
