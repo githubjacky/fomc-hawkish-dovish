@@ -1,6 +1,6 @@
 ####################################################################################################
 # This file defines how the traing process should be proceed, such as what training loos is
-# considered, what metris are logged during validation and test stages, and what optimizers should 
+# considered, what metris are logged during validation and test stages, and what optimizers should
 # we adopt. `L.LightningModule` chunks the process into different pieces of events to allow easy
 # configurations separately.
 ####################################################################################################
@@ -9,94 +9,117 @@
 from functools import cached_property
 import lightning as L
 import torch
-from torch.nn import Linear, Softmax, Sequential, LayerNorm, GELU, Dropout
+from torch.nn import (
+    Dropout,
+    # GELU,
+    LayerNorm,
+    Linear,
+    ReLU,
+    Sequential,
+    Softmax,
+)
 import torch.nn.functional as F
-from torchmetrics.classification import PrecisionRecallCurve, AveragePrecision, Precision, Recall
-from typing import Optional
+from torchmetrics.classification import (
+    PrecisionRecallCurve,
+    AveragePrecision,
+    Precision,
+    Recall,
+)
+from typing import Union
 
-from metrics import ClassificationMetricsLogger
-from nn import RNNFamily
+from .metrics import ClassificationMetricsLogger
+from .nn import RNNFamily, MLP
+
+
+def get_nn(model_name: str, input_size, **nn_hparam) -> Union[RNNFamily, MLP]:
+    if model_name == "mlp":
+        return MLP()
+    else:
+        return RNNFamily(
+            model_name,
+            input_size=input_size,
+            hidden_size=nn_hparam["hidden_size"],
+            num_layers=nn_hparam["num_layers"],
+            dropout=nn_hparam["dropout"],
+            bidirectional=nn_hparam["bidirectional"],
+        )
 
 
 class HawkishDovishClassifier(L.LightningModule):
-    def __init__(self, model, lr, class_weights: Optional[torch.Tensor] = None, **nn_hparam):
+    num_classes = 3
+
+    def __init__(
+        self,
+        model_name: str,
+        lr: float,
+        class_weights: torch.Tensor,
+        input_size: int,
+        **nn_hparam,
+    ):
         """
         The type of `model` is the subclass of `nn.Module`, i.e., nn.RNN.
         """
         super().__init__()
-        # avoid: Attribute 'model' is an instance of `nn.Module` and is already saved during 
+        # avoid: Attribute 'model' is an instance of `nn.Module` and is already saved during
         # checkpointing. It is recommended to ignore them using `self.save_hyperparameters(ignore=['model'])`.
-        self.save_hyperparameters(ignore=['model'])
-        self.model = model
+        self.save_hyperparameters(ignore=["model"])
         self.lr = lr
         self.clas_weights = class_weights
 
-        # hidden_size is the outputsize of `self.model`
-        if type(model) == RNNFamily:
-            hidden_size = (
-                # concat the first and the last hidden state, both's size are double as each of
-                # which concate the output from two directions.
-                nn_hparam["hidden_size"] * 4
-                if nn_hparam["bidirectional"]
-                else
-                # only use the last hidden state
-                nn_hparam["hidden_size"]
-            )
-        else:
-            #TODO
-            pass
+        self.nn = get_nn(model_name, input_size, **nn_hparam)
+        self.nn_output_size = self.nn.output_size
 
-        num_classes = 3
+        # classification layers (ff-> linear)
         self.ff = Sequential(
-            LayerNorm(hidden_size),
-            Linear(hidden_size, nn_hparam["ff_hidden_size"]),
-            GELU(),
-            Linear(nn_hparam["ff_hidden_size"], hidden_size),
-            Dropout(nn_hparam["ff_dropout"])
+            Linear(self.nn_output_size, nn_hparam["ff_hidden_size"]),
+            # GELU(),
+            ReLU(),
+            Linear(nn_hparam["ff_hidden_size"], self.nn_output_size),
+            Dropout(nn_hparam["ff_dropout"]),
         )
-        self.linear = Linear(hidden_size, num_classes)
+        self.linear = Linear(self.nn_output_size, self.num_classes)
+
+        self.layernorm = LayerNorm(self.nn_output_size)
         self.softmax = Softmax(dim=-1)
 
         # validation and test metrics
-        self.pr_curve = PrecisionRecallCurve("multiclass", num_classes=num_classes)
-        self.macro_ap = AveragePrecision("multiclass", num_classes=num_classes, average="macro")
-        self.ap = AveragePrecision("multiclass", num_classes=num_classes, average=None)
-        self.prec = Precision("multiclass", num_classes=num_classes, average=None)
-        self.recall = Recall("multiclass", num_classes=num_classes, average=None)
-
+        self.pr_curve = PrecisionRecallCurve("multiclass", num_classes=self.num_classes)
+        self.macro_ap = AveragePrecision(
+            "multiclass", num_classes=self.num_classes, average="macro"
+        )
+        self.ap = AveragePrecision(
+            "multiclass", num_classes=self.num_classes, average=None
+        )
+        self.prec = Precision("multiclass", num_classes=self.num_classes, average=None)
+        self.recall = Recall("multiclass", num_classes=self.num_classes, average=None)
 
     @cached_property
     def classes(self):
         return ["dovish", "hawkish", "neutral"]
 
-
     @cached_property
     def metrics_logger(self):
         return ClassificationMetricsLogger(self.logger)
 
-
     def forward(self, X):
-        outputs = self.model(X)
-        outputs = self.ff(outputs)
+        outputs = self.nn(X)
+        outputs = self.ff(self.layernorm(outputs))
         logits = self.linear(outputs)
 
         return logits
 
-
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), self.lr)
 
-
     def training_step(self, batch, batch_idx):
-        X, y = batch['embed'], batch['label']
-        loss = F.cross_entropy(self(X), y, weight=torch.tensor([2., 2., 1.]).cuda())
+        X, y = batch["embed"], batch["label"]
+        loss = F.cross_entropy(self(X), y, weight=torch.tensor([2.0, 2.0, 1.0]).cuda())
         self.log("train/loss", loss)
 
         return loss
 
-
     def validation_step(self, batch, batch_idx) -> None:
-        X, y = batch['embed'], batch['label']
+        X, y = batch["embed"], batch["label"]
         logits = self(X)
         loss = F.cross_entropy(logits, y)
 
@@ -112,7 +135,6 @@ class HawkishDovishClassifier(L.LightningModule):
         self.ap.update(probs, y)
         self.prec.update(probs, y)
         self.recall.update(probs, y)
-        
 
     def on_validation_epoch_end(self):
         # log precision recall curves (table)
@@ -132,9 +154,8 @@ class HawkishDovishClassifier(L.LightningModule):
             self.log(f"val/prec_{class_type}", prec)
             self.log(f"val/recall_{class_type}", recall)
 
-
     def test_step(self, batch, batch_idx) -> None:
-        X, y = batch['embed'], batch['label']
+        X, y = batch["embed"], batch["label"]
 
         # metrics calculation
         probs = self.softmax(self(X))
@@ -144,7 +165,6 @@ class HawkishDovishClassifier(L.LightningModule):
         self.ap.update(probs, y)
         self.prec.update(probs, y)
         self.recall.update(probs, y)
-
 
     def on_test_epoch_end(self):
         # log precision recall curves (table)

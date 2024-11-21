@@ -48,9 +48,9 @@ class Tuner:
         hparam = {
             "hidden_size": trial.suggest_int("hidden_size", 64, 256),
             # "num_layers": trial.suggest_int("num_layers", 1, 20),
-            "num_layers": 2,
-            "dropout": trial.suggest_float("dropout", 0.1, 0.9)
-            # "dropout": 0.
+            "num_layers": 1,
+            #"dropout": trial.suggest_float("dropout", 0.1, 0.9)
+            "dropout": 0.
         }
         hparam = hparam | {"bidirectional": self.cfg.RNNFamily.bidirectional}
 
@@ -58,8 +58,8 @@ class Tuner:
     
     def ff_hparam(self, trial: optuna.Trial):
         hparam = {
-            "ff_hidden_size": trial.suggest_int("hidden_size", 512, 1024),
-            "ff_dropout": trial.suggest_float("dropout", 0.1, 0.9)
+            "ff_hidden_size": trial.suggest_int("ff_hidden_size", 512, 1024),
+            "ff_dropout": trial.suggest_float("ff_dropout", 0.1, 0.9)
         }
 
         return hparam

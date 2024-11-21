@@ -1,14 +1,15 @@
-####################################################################################################
-# This file integrate several auxiliary components for training a classifier, such as equipping a 
-# logger, how to save model checkpoints, when to early stop and configuring the progress bar, etc. 
-# Moreover, the file serves as the entry point to lauch the training procedure, incoporating the
-# data module with stacked nn architectures.
-# 
-# To train a classifier, we need to set up data module, `model` and `trainer`. After setting up
-# we can fit the model and then test the model.
+##########################################################################################
+# This file integrate several auxiliary components for training a classifier, such as
+# equipping a logger, how to save model checkpoints, when to early stop and configuring
+# the progress bar, etc. Moreover, the file serves as the entry point to launch the
+# training procedure, incorporating the data module with stacked nn architectures.
 #
+# To train a classifier, we need to set up data module, `model` and `trainer`. After
+# setting up, we can fit the model and then test the model.
+#
+# Note:
 # - `model` is the object of the L.LightningModule's subclass` defind in model.py
-####################################################################################################
+##########################################################################################
 
 
 import hydra
@@ -23,22 +24,21 @@ from sklearn.model_selection import train_test_split
 from typing import Optional
 import wandb
 
-from data_module import RNNFamilyDataModule, MLPDataModule
-from model import RNNFamily, HawkishDovishClassifier
+from core.data_module import RNNFamilyDataModule, MLPDataModule
+from core.lightning_module import HawkishDovishClassifier
 
 
 def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
     # not in hyperparmeter tuning
-    if batch_size is None:
-        batch_size = cfg.batch_size
+    batch_size = cfg.batch_size if batch_size is None else batch_size
 
     # `RNNFamily` can only use flair's word embeddings
     if cfg.nn in ["RNN", "GRU", "LSTM"]:
         dm = RNNFamilyDataModule(
             batch_size,
-            cfg.flair_embed.model_name, 
+            cfg.flair_embed.model_name,
             cfg.flair_embed.flair_layers,
-            cfg.flair_embed.flair_layer_mean
+            cfg.flair_embed.flair_layer_mean,
         )
     else:
         dm = MLPDataModule(
@@ -47,22 +47,21 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
             (
                 cfg.flair_embed.model_name
                 if cfg.embed_framework == "flair"
-                else
-                cfg.sbert_embed.model_name
-            ), 
+                else cfg.sbert_embed.model_name
+            ),
             # if we're using sbert, then it's meaningless to set these arguments
             # but I keep them just in case we're using flair
             cfg.flair_embed.flair_layers,
-            cfg.flair_embed.flair_layer_mean
+            cfg.flair_embed.flair_layer_mean,
         )
 
     dm.prepare_data()
 
     train_idx, val_idx = train_test_split(
         np.arange(len(dm.train_dataset)),
-        test_size = 0.2,
-        stratify = dm.train_dataset["label"],
-        random_state = cfg.random_state
+        test_size=0.2,
+        stratify=dm.train_dataset["label"],
+        random_state=cfg.random_state,
     )
     dm.setup(train_idx, val_idx)
 
@@ -71,57 +70,52 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
 
 def setup_model(dm, cfg: DictConfig):
     if cfg.nn in ["RNN", "GRU", "LSTM"]:
-        nn = RNNFamily(
-            cfg.nn,
-            input_size = dm.embed_dimension,
-            hidden_size = cfg.RNNFamily.hidden_size,
-            num_layers = cfg.RNNFamily.num_layers,
-            dropout = cfg.RNNFamily.dropout,
-            bidirectional = cfg.RNNFamily.bidirectional
+        nn_hparam = OmegaConf.to_container(cfg.RNNFamily) | OmegaConf.to_container(
+            cfg.ff
         )
-        nn_hparam = OmegaConf.to_container(cfg.RNNFamily)
 
-    model = HawkishDovishClassifier(nn, cfg.lr, dm.sklearn_class_weight, **nn_hparam)
+    model = HawkishDovishClassifier(
+        cfg.nn, cfg.lr, dm.sklearn_class_weight, dm.embed_dimension, **nn_hparam
+    )
 
     return model
 
 
 def setup_trainer(model, cfg: DictConfig):
     wandb_logger = WandbLogger(
-        project = "fomc-hawkish-dovish",
+        project="fomc-hawkish-dovish",
         # log model once the checkpoint is created
-        log_model = "all",
-        group = cfg.tuning.study_name,
-        save_dir = "wandb"
+        log_model="all",
+        group=cfg.tuning.study_name,
+        save_dir="wandb",
     )
     wandb_logger.watch(model, log="all")
 
     early_stop = EarlyStopping(
-        monitor = cfg.early_stop.monitor,
-        mode = cfg.early_stop.mode,
-        patience = cfg.early_stop.patience
+        monitor=cfg.early_stop.monitor,
+        mode=cfg.early_stop.mode,
+        patience=cfg.early_stop.patience,
     )
     ckpt = ModelCheckpoint(
-        monitor = cfg.model_check_point.monitor,
-        mode = cfg.model_check_point.mode
+        monitor=cfg.model_check_point.monitor, mode=cfg.model_check_point.mode
     )
     pbar = TQDMProgressBar(refresh_rate=1)
-    callbacks=[early_stop, ckpt, pbar]
+    callbacks = [early_stop, ckpt, pbar]
 
     trainer = L.Trainer(
-        accelerator = cfg.trainer.accelerator,
-        strategy = cfg.trainer.strategy,
-        devices = cfg.trainer.devices,
+        accelerator=cfg.trainer.accelerator,
+        strategy=cfg.trainer.strategy,
+        devices=cfg.trainer.devices,
         # num_nodes = 1,
         # precision = "32-true"
-        logger = wandb_logger,
-        callbacks = callbacks,
+        logger=wandb_logger,
+        callbacks=callbacks,
         # fast_dev_run = True
-        max_epochs = cfg.trainer.max_epochs,
-        log_every_n_steps = cfg.trainer.log_every_n_steps ,
-        check_val_every_n_epoch = cfg.trainer.check_val_every_n_epoch,
+        max_epochs=cfg.trainer.max_epochs,
+        log_every_n_steps=cfg.trainer.log_every_n_steps,
+        check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         # accumulate_grad_batches =
-        # gradient_clip_val = 
+        # gradient_clip_val =
     )
 
     return trainer
@@ -134,7 +128,7 @@ def main(cfg: DictConfig):
     trainer = setup_trainer(model, cfg)
 
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
-    trainer.test(dataloaders=dm.test_dataloader(), ckpt_path='best')
+    trainer.test(dataloaders=dm.test_dataloader(), ckpt_path="best")
 
 
 if __name__ == "__main__":
