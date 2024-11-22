@@ -15,7 +15,7 @@ class Tuner:
         self.cfg = cfg
 
     def objective(self, trial):
-        batch_size = trial.suggest_int("batch_size", 32, 256)
+        batch_size = trial.suggest_int("batch_size", 16, 1024)
         dm = setup_dm(self.cfg, batch_size)
 
         if self.cfg.nn in ["RNN", "GRU", "LSTM"]:
@@ -30,7 +30,7 @@ class Tuner:
 
         logger = MLFlowLogger(
             experiment_name=self.cfg.tuning.study_name,
-            run_name=trial.number,
+            run_name=str(trial.number),
             tracking_uri="file:./mlruns",
             log_model=True,
         )
@@ -53,7 +53,7 @@ class Tuner:
 
     def rnn_hparam(self, trial: optuna.Trial):
         hparam = {
-            "hidden_size": trial.suggest_int("hidden_size", 64, 256),
+            "hidden_size": trial.suggest_int("hidden_size", 64, 2048),
             # "num_layers": trial.suggest_int("num_layers", 1, 20),
             "num_layers": 1,
             # "dropout": trial.suggest_float("dropout", 0.1, 0.9)
@@ -80,4 +80,3 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
-
