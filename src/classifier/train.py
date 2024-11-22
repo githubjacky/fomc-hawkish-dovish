@@ -16,13 +16,12 @@ import hydra
 import lightning as L
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning.pytorch.callbacks import ModelCheckpoint, TQDMProgressBar
-from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.loggers import WandbLogger, MLFlowLogger
+import mlflow
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
-import optuna
 from sklearn.model_selection import train_test_split
 from typing import Optional
-import wandb
 
 from core.data_module import RNNFamilyDataModule, MLPDataModule
 from core.lightning_module import HawkishDovishClassifier
@@ -70,10 +69,9 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
 
 def setup_model(dm, cfg: DictConfig):
     if cfg.nn in ["RNN", "GRU", "LSTM"]:
-        nn_hparam = OmegaConf.to_container(cfg.RNNFamily) | OmegaConf.to_container(
-            cfg.ff
-        )
+        nn_hparam = OmegaConf.to_container(cfg.RNNFamily)
 
+    nn_hparam = nn_hparam | OmegaConf.to_container(cfg.ff)
     model = HawkishDovishClassifier(
         cfg.nn, cfg.lr, dm.sklearn_class_weight, dm.embed_dimension, **nn_hparam
     )
@@ -81,16 +79,7 @@ def setup_model(dm, cfg: DictConfig):
     return model
 
 
-def setup_trainer(model, cfg: DictConfig):
-    wandb_logger = WandbLogger(
-        project="fomc-hawkish-dovish",
-        # log model once the checkpoint is created
-        log_model="all",
-        group=cfg.tuning.study_name,
-        save_dir="wandb",
-    )
-    wandb_logger.watch(model, log="all")
-
+def setup_trainer(cfg: DictConfig, logger):
     early_stop = EarlyStopping(
         monitor=cfg.early_stop.monitor,
         mode=cfg.early_stop.mode,
@@ -108,7 +97,7 @@ def setup_trainer(model, cfg: DictConfig):
         devices=cfg.trainer.devices,
         # num_nodes = 1,
         # precision = "32-true"
-        logger=wandb_logger,
+        logger=logger,
         callbacks=callbacks,
         # fast_dev_run = True
         max_epochs=cfg.trainer.max_epochs,
@@ -121,12 +110,36 @@ def setup_trainer(model, cfg: DictConfig):
     return trainer
 
 
+def get_exper_id(name: str):
+    exper = mlflow.get_experiment_by_name(name)
+
+    return (
+        exper.experiment_id if exper is not None else mlflow.create_experiment("test")
+    )
+
+
 @hydra.main(config_path="../../config", config_name="main", version_base=None)
 def main(cfg: DictConfig):
     dm = setup_dm(cfg)
     model = setup_model(dm, cfg)
-    trainer = setup_trainer(model, cfg)
 
+    # logger = WandbLogger(
+    #     project="fomc-hawkish-dovish",
+    #     # log model once the checkpoint is created
+    #     log_model="all",
+    #     save_dir="wandb",
+    # )
+    # logger.watch(model.nn, log="all")
+    # logger.watch(model.ff, log="all")
+
+    logger = MLFlowLogger(
+        experiment_name="test",
+        tracking_uri="file:./mlruns",
+        artifact_location="artifact",
+        log_model=True,
+    )
+
+    trainer = setup_trainer(cfg, logger)
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
     trainer.test(dataloaders=dm.test_dataloader(), ckpt_path="best")
 

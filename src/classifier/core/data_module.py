@@ -1,19 +1,16 @@
 ####################################################################################################
 # There are three classes in this file, one base class and two subclasses. The only difference
-# between subclasses is that one provides sentence-level embeddings and the other destined to 
+# between subclasses is that one provides sentence-level embeddings and the other destined to
 # word-level embeddings. Moreover, what I mean by "provide" is how we call `generate_embeds` in
-# different scenarios. If we aim to train a sequence model, such as RNN we need word-level 
-# embeddings. Nevertheless, if we focus on training a MLP or multinominal regression, we can rely 
+# different scenarios. If we aim to train a sequence model, such as RNN we need word-level
+# embeddings. Nevertheless, if we focus on training a MLP or multinominal regression, we can rely
 # on sentence-level embeddings.
 ####################################################################################################
 
 
 from datasets import load_dataset
 from flair.data import Sentence
-from flair.embeddings import (
-    TransformerDocumentEmbeddings,
-    TransformerWordEmbeddings
-)
+from flair.embeddings import TransformerDocumentEmbeddings, TransformerWordEmbeddings
 import lightning as L
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -47,7 +44,6 @@ class BaseDataModule(L.LightningDataModule):
     def embed_dimension(self):
         return AutoConfig.from_pretrained(self.embed_model_name).hidden_size
 
-
     # download dataset
     def prepare_data(self) -> None:
         dataset = load_dataset("gtfintechlab/fomc_communication")
@@ -56,7 +52,6 @@ class BaseDataModule(L.LightningDataModule):
 
         self.len_train_dataset = len(self.train_dataset)
         self.len_test_dataset = len(self.test_dataset)
-
 
     # split the train dataset
     def setup(self, train_idx: np.ndarray, val_idx: np.ndarray) -> None:
@@ -69,22 +64,21 @@ class BaseDataModule(L.LightningDataModule):
         self.len_train_data = len(train_idx)
         self.len_val_data = len(val_idx)
 
-
     @property
     def sklearn_class_weight(self) -> torch.Tensor:
         y = []
         for i in range(len(self.train_data)):
             item = self.train_data[[i]]
             y.append(item["label"][0])
-        weights = compute_class_weight(class_weight="balanced", classes=np.unique(y), y=y)
+        weights = compute_class_weight(
+            class_weight="balanced", classes=np.unique(y), y=y
+        )
 
         return torch.tensor(weights, dtype=torch.float).cuda()
-
 
     # it's defined in subclass
     def generate_embeds(self, batch: List[Dict]) -> None:
         pass
-
 
     # generate embedding for `sentence` in collate_fn
     def collate_fn(self, batch: List[Dict]) -> Dict:
@@ -106,44 +100,53 @@ class BaseDataModule(L.LightningDataModule):
         return {
             "sentence": [elem["sentence"] for elem in batch],
             "label": torch.tensor([elem["label"] for elem in batch]),
-            "embed": self.generate_embeds(batch)
+            "embed": self.generate_embeds(batch),
         }
 
-
     def train_dataloader(self):
-        return DataLoader(self.train_data, batch_size=self.batch_size, collate_fn=self.collate_fn)
-
+        return DataLoader(
+            self.train_data,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            # num_workers=63,
+        )
 
     def val_dataloader(self):
-        return DataLoader(self.val_data, batch_size=self.batch_size, collate_fn=self.collate_fn)
-
+        return DataLoader(
+            self.val_data,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            # num_workers=63,
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, collate_fn=self.collate_fn)
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            # num_workers=63,
+        )
 
 
 class MLPDataModule(BaseDataModule):
-    def __init__(self,
-                 batch_size: int = 256,
-                 framework: Literal["flair", "sbert"] = "flair",
-                 embed_model_name: str = "bert-base-uncased",
-                 flair_layers: str = "all",
-                 flair_layer_mean = True):
-
+    def __init__(
+        self,
+        batch_size: int = 256,
+        framework: Literal["flair", "sbert"] = "flair",
+        embed_model_name: str = "bert-base-uncased",
+        flair_layers: str = "all",
+        flair_layer_mean=True,
+    ):
         super().__init__(batch_size, embed_model_name)
 
         self.embed_model = (
             TransformerDocumentEmbeddings(
-                embed_model_name,
-                layers = flair_layers,
-                layer_mean = flair_layer_mean
+                embed_model_name, layers=flair_layers, layer_mean=flair_layer_mean
             )
             if framework == "flair"
-            else
-            SentenceTransformer(embed_model_name, device="cuda")
+            else SentenceTransformer(embed_model_name, device="cuda")
         )
         self.framework = framework
-
 
     def generate_embeds(self, batch: List[Dict]) -> torch.Tensor:
         if self.framework == "flair":
@@ -155,7 +158,9 @@ class MLPDataModule(BaseDataModule):
             # the dimension of embed: N * D
             embeds = torch.stack([sentence.embedding for sentence in sentences])
         else:
-            embeds = torch.tensor(self.embed_model.encode([elem["sentence"] for elem in batch]))
+            embeds = torch.tensor(
+                self.embed_model.encode([elem["sentence"] for elem in batch])
+            )
 
         return embeds
 
@@ -164,24 +169,23 @@ class RNNFamilyDataModule(BaseDataModule):
     """
     We we decide to use RNNFamily model, we not only need to generate embeddings, we also need to
     pad the sequce as setneces have different length. Normally, we rely on the zero padding, but
-    these paddings shouldn't be responsibile for the model training, i.e., both forwawrd pass and 
+    these paddings shouldn't be responsibile for the model training, i.e., both forwawrd pass and
     back propagation should eglect these inputs of padding. And that's where `PackedSequence` comes
     into play. It tell RNNFamily model when to stop the forward pass before the start of paddings.
     """
-    def __init__(self,
-                 batch_size: int = 256,
-                 embed_model_name: str = "bert-base-uncased",
-                 flair_layers: str = "all",
-                 flair_layer_mean = True):
 
+    def __init__(
+        self,
+        batch_size: int = 256,
+        embed_model_name: str = "bert-base-uncased",
+        flair_layers: str = "all",
+        flair_layer_mean=True,
+    ):
         super().__init__(batch_size, embed_model_name)
 
         self.embed_model = TransformerWordEmbeddings(
-            embed_model_name,
-            layers = flair_layers,
-            layer_mean = flair_layer_mean
+            embed_model_name, layers=flair_layers, layer_mean=flair_layer_mean
         )
-
 
     def generate_embeds(self, batch: List[Dict]) -> PackedSequence:
         sentences = [Sentence(elem["sentence"]) for elem in batch]
@@ -197,14 +201,15 @@ class RNNFamilyDataModule(BaseDataModule):
                 torch.stack([item.embedding for item in sentence])
                 for sentence in sentences
             ],
-            batch_first=True
+            batch_first=True,
         )
 
         packed = pack_padded_sequence(
             seq,
             lengths=[len(sentence) for sentence in sentences],
             batch_first=True,
-            enforce_sorted=False
+            enforce_sorted=False,
         )
 
         return packed
+

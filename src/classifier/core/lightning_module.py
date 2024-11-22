@@ -60,11 +60,10 @@ class HawkishDovishClassifier(L.LightningModule):
         The type of `model` is the subclass of `nn.Module`, i.e., nn.RNN.
         """
         super().__init__()
-        # avoid: Attribute 'model' is an instance of `nn.Module` and is already saved during
-        # checkpointing. It is recommended to ignore them using `self.save_hyperparameters(ignore=['model'])`.
-        self.save_hyperparameters(ignore=["model"])
+
         self.lr = lr
-        self.clas_weights = class_weights
+        self.class_weights = class_weights
+        self.nn_hparam = nn_hparam
 
         self.nn = get_nn(model_name, input_size, **nn_hparam)
         self.nn_output_size = self.nn.output_size
@@ -111,9 +110,14 @@ class HawkishDovishClassifier(L.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), self.lr)
 
+    def on_train_start(self):
+        self.logger.log_hyperparams(
+            {"class_weights": self.class_weights} | self.nn_hparam
+        )
+
     def training_step(self, batch, batch_idx):
         X, y = batch["embed"], batch["label"]
-        loss = F.cross_entropy(self(X), y, weight=torch.tensor([2.0, 2.0, 1.0]).cuda())
+        loss = F.cross_entropy(self(X), y, weight=self.class_weights.cuda())
         self.log("train/loss", loss)
 
         return loss
@@ -137,10 +141,6 @@ class HawkishDovishClassifier(L.LightningModule):
         self.recall.update(probs, y)
 
     def on_validation_epoch_end(self):
-        # log precision recall curves (table)
-        prec, recall, thres = self.pr_curve.compute()
-        self.metrics_logger.log_pr_curves("val", prec, recall, thres)
-
         # macro means directly average all average precision from different classes
         self.log("val/macro_avg_prec", self.macro_ap)
 
@@ -168,8 +168,8 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def on_test_epoch_end(self):
         # log precision recall curves (table)
-        prec, recall, thres = self.pr_curve.compute()
-        self.metrics_logger.log_pr_curves("test", prec, recall, thres)
+        # prec, recall, thres = self.pr_curve.compute()
+        # self.metrics_logger.log_pr_curves("test", prec, recall, thres)
 
         self.log("test/macro_avg_prec", self.macro_ap)
 

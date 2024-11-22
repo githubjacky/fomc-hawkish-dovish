@@ -3,6 +3,7 @@
 # hydra output
 outputs/
 wandb/
+mlruns/
 nohup.out
 
 # Byte-compiled / optimized / DLL files
