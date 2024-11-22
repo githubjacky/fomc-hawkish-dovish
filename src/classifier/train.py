@@ -97,6 +97,7 @@ def setup_trainer(cfg: DictConfig, logger):
         devices=cfg.trainer.devices,
         # num_nodes = 1,
         # precision = "32-true"
+        enable_model_summary=False,
         logger=logger,
         callbacks=callbacks,
         # fast_dev_run = True

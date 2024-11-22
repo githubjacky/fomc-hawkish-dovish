@@ -15,13 +15,13 @@ class Tuner:
         self.cfg = cfg
 
     def objective(self, trial):
-        batch_size = trial.suggest_int("batch_size", 16, 1024)
+        batch_size = trial.suggest_int("batch_size", 32, 1024)
         dm = setup_dm(self.cfg, batch_size)
 
         if self.cfg.nn in ["RNN", "GRU", "LSTM"]:
             nn_hparam = self.rnn_hparam(trial)
 
-        nn_hparam = nn_hparam | self.ff_hparam(trial)
+        nn_hparam = {"batch_size": batch_size} | nn_hparam | self.ff_hparam(trial)
         lr = trial.suggest_float("lr", 3e-6, 0.1)
 
         model = HawkishDovishClassifier(
@@ -41,7 +41,7 @@ class Tuner:
 
     def optimize(self):
         study = optuna.create_study(
-            # storage="sqlite:///db.sqlite3",
+            storage="sqlite:///db.sqlite3",
             study_name=self.cfg.tuning.study_name,
             pruner=optuna.pruners.MedianPruner(),
             load_if_exists=True,

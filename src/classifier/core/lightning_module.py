@@ -112,7 +112,8 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def on_train_start(self):
         self.logger.log_hyperparams(
-            {"class_weights": self.class_weights} | self.nn_hparam
+            {"class_weights": self.class_weights, "learning_rate": self.lr}
+            | self.nn_hparam
         )
 
     def training_step(self, batch, batch_idx):
