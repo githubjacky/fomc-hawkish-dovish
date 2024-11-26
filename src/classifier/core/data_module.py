@@ -178,7 +178,7 @@ class RNNFamilyDataModule(BaseDataModule):
         self,
         batch_size: int = 256,
         embed_model_name: str = "bert-base-uncased",
-        flair_layers: str = "all",
+        flair_layers: str = "-1",
         flair_layer_mean=True,
     ):
         super().__init__(batch_size, embed_model_name)
@@ -186,6 +186,9 @@ class RNNFamilyDataModule(BaseDataModule):
         self.embed_model = TransformerWordEmbeddings(
             embed_model_name, layers=flair_layers, layer_mean=flair_layer_mean
         )
+
+        self.embed_model_name = embed_model_name
+        self.flair_layers = flair_layers
 
     def generate_embeds(self, batch: List[Dict]) -> PackedSequence:
         sentences = [Sentence(elem["sentence"]) for elem in batch]
@@ -212,4 +215,3 @@ class RNNFamilyDataModule(BaseDataModule):
         )
 
         return packed
-

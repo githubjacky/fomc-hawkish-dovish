@@ -11,10 +11,9 @@ import lightning as L
 import torch
 from torch.nn import (
     Dropout,
-    # GELU,
     LayerNorm,
     Linear,
-    ReLU,
+    Tanh,
     Sequential,
     Softmax,
 )
@@ -70,10 +69,9 @@ class HawkishDovishClassifier(L.LightningModule):
 
         # classification layers (ff-> linear)
         self.ff = Sequential(
-            Linear(self.nn_output_size, nn_hparam["ff_hidden_size"]),
-            # GELU(),
-            ReLU(),
-            Linear(nn_hparam["ff_hidden_size"], self.nn_output_size),
+            Linear(self.nn_output_size, self.nn_output_size),
+            Tanh(),
+            Linear(self.nn_output_size, self.nn_output_size),
             Dropout(nn_hparam["ff_dropout"]),
         )
         self.linear = Linear(self.nn_output_size, self.num_classes)
