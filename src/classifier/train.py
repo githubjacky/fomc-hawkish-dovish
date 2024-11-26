@@ -36,7 +36,7 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
         dm = RNNFamilyDataModule(
             batch_size,
             cfg.flair_embed.model_name,
-            cfg.flair_embed.flair_layers,
+            str(cfg.flair_embed.flair_layers),
             cfg.flair_embed.flair_layer_mean,
         )
     else:
@@ -106,8 +106,7 @@ def setup_trainer(cfg: DictConfig, logger):
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         # accumulate_grad_batches =
         # gradient_clip_val =
-    )nohup CUDA_VISIBLE_DEVICES="2" uv run python src/classifier/tune.p
-y > "nohup_gru_ff" 2>&1 &
+    )
 
     return trainer
 

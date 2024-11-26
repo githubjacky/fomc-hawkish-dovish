@@ -15,11 +15,14 @@ class Tuner:
         self.cfg = cfg
 
     def objective(self, trial):
-        batch_size = trial.suggest_int("batch_size", 32, 1024)
+        batch_size = trial.suggest_int("batch_size", 256, 1024)
         dm = setup_dm(self.cfg, batch_size)
 
         if self.cfg.nn in ["RNN", "GRU", "LSTM"]:
-            nn_hparam = self.rnn_hparam(trial)
+            nn_hparam = self.rnn_hparam(trial) | {
+                "flair_layers": dm.flair_layers,
+                "embed_model_name": dm.embed_model_name,
+            }
 
         nn_hparam = {"batch_size": batch_size} | nn_hparam | self.ff_hparam(trial)
         lr = trial.suggest_float("lr", 3e-6, 0.1)
@@ -53,20 +56,19 @@ class Tuner:
 
     def rnn_hparam(self, trial: optuna.Trial):
         hparam = {
-            "hidden_size": trial.suggest_int("hidden_size", 64, 2048),
+            "hidden_size": trial.suggest_int("hidden_size", 256, 2048),
             # "num_layers": trial.suggest_int("num_layers", 1, 20),
             "num_layers": 1,
             # "dropout": trial.suggest_float("dropout", 0.1, 0.9)
             "dropout": 0.0,
+            "bidirectional": True,
         }
-        hparam = hparam | {"bidirectional": self.cfg.RNNFamily.bidirectional}
 
         return hparam
 
     def ff_hparam(self, trial: optuna.Trial):
         hparam = {
-            "ff_hidden_size": trial.suggest_int("ff_hidden_size", 512, 1024),
-            "ff_dropout": trial.suggest_float("ff_dropout", 0.1, 0.9),
+            "ff_dropout": trial.suggest_float("ff_dropout", 0.1, 0.7),
         }
 
         return hparam

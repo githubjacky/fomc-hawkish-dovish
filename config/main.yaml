@@ -5,7 +5,7 @@ mode: tune
 
 flair_embed:
   model_name: bert-base-uncased
-  flair_layers: all
+  flair_layers: -1
   flair_layer_mean: true
 
 sbert_embed:
@@ -42,8 +42,8 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: bert_base_embed_gruff
-  n_trials: 500
+  study_name: rnn_pooling_choose_nn
+  n_trials: 1
 
 RNNFamily:
   hidden_size: 128
