@@ -106,7 +106,8 @@ def setup_trainer(cfg: DictConfig, logger):
         check_val_every_n_epoch=cfg.trainer.check_val_every_n_epoch,
         # accumulate_grad_batches =
         # gradient_clip_val =
-    )
+    )nohup CUDA_VISIBLE_DEVICES="2" uv run python src/classifier/tune.p
+y > "nohup_gru_ff" 2>&1 &
 
     return trainer
 
