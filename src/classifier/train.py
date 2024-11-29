@@ -124,21 +124,21 @@ def main(cfg: DictConfig):
     dm = setup_dm(cfg)
     model = setup_model(dm, cfg)
 
-    # logger = WandbLogger(
-    #     project="fomc-hawkish-dovish",
-    #     # log model once the checkpoint is created
-    #     log_model="all",
-    #     save_dir="wandb",
-    # )
-    # logger.watch(model.nn, log="all")
-    # logger.watch(model.ff, log="all")
-
-    logger = MLFlowLogger(
-        experiment_name="test",
-        tracking_uri="file:./mlruns",
-        artifact_location="artifact",
-        log_model=True,
+    logger = WandbLogger(
+        project="fomc-hawkish-dovish",
+        # log model once the checkpoint is created
+        log_model="all",
+        save_dir="wandb",
     )
+    logger.watch(model.nn, log="all")
+    logger.watch(model.ff, log="all")
+
+    # logger = MLFlowLogger(
+    #     experiment_name="test",
+    #     tracking_uri="file:./mlruns",
+    #     artifact_location="artifact",
+    #     log_model=True,
+    # )
 
     trainer = setup_trainer(cfg, logger)
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())

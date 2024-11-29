@@ -11,12 +11,12 @@ flair_embed:
 sbert_embed:
   model_name: sentence-transformers/all-mpnet-base-v2 
 
-nn: GRU
+nn: LSTM
 # should adjust only in sentence-level classification
 # for word-level, flair's word embeddings is the only choice
 embed_framework: flair
-lr: 0.0003
-batch_size: 1024
+lr: 0.000379196455082216
+batch_size: 914
 random_state: 1126
 
 early_stop:
@@ -42,13 +42,13 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: rnn_pooling_choose_nn
-  n_trials: 1
+  study_name: rnn_pooling_choose_nn_lstm_
+  n_trials: 100
 
 RNNFamily:
-  hidden_size: 128
-  num_layers: 2
-  dropout: 0.3
+  hidden_size: 296
+  num_layers: 1
+  dropout: 0
   bidirectional: True
 
 MLP:
@@ -58,5 +58,4 @@ MLP:
   output_size: 128
 
 ff:
-  ff_hidden_size: 256
-  ff_dropout: 0.3
+  ff_dropout: 0.5247106064278061
