@@ -1,7 +1,6 @@
 defaults:
   - _self_
 
-mode: tune
 
 flair_embed:
   model_name: bert-base-uncased
@@ -42,7 +41,7 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: rnn_pooling_choose_nn_lstm_
+  study_name: rnn_pooling_choose_nn_gru
   n_trials: 100
 
 RNNFamily:

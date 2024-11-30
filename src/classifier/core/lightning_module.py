@@ -23,6 +23,8 @@ from torchmetrics.classification import (
     AveragePrecision,
     Precision,
     Recall,
+    F1Score,
+    AUROC,
 )
 from typing import Union
 
@@ -89,6 +91,16 @@ class HawkishDovishClassifier(L.LightningModule):
         )
         self.prec = Precision("multiclass", num_classes=self.num_classes, average=None)
         self.recall = Recall("multiclass", num_classes=self.num_classes, average=None)
+
+        self.macro_f1 = F1Score(
+            "multiclass", num_classes=self.num_classes, average="macro"
+        )
+        self.f1 = F1Score("multiclass", num_classes=self.num_classes, average=None)
+
+        self.macro_auroc = AUROC(
+            "multiclass", num_classes=self.num_classes, average="macro"
+        )
+        self.auroc = AUROC("multiclass", num_classes=self.num_classes, average=None)
 
     @cached_property
     def classes(self):
@@ -165,19 +177,34 @@ class HawkishDovishClassifier(L.LightningModule):
         self.prec.update(probs, y)
         self.recall.update(probs, y)
 
+        self.macro_f1.update(probs, y)
+        self.f1.update(probs, y)
+
+        self.macro_auroc.update(probs, y)
+        self.auroc.update(probs, y)
+
     def on_test_epoch_end(self):
         # log precision recall curves (table)
         # prec, recall, thres = self.pr_curve.compute()
         # self.metrics_logger.log_pr_curves("test", prec, recall, thres)
 
         self.log("test/macro_avg_prec", self.macro_ap)
+        self.log("test/macro_f1", self.macro_f1)
+        self.log("test/macro_auroc", self.macro_auroc)
 
         # log individual average precision, precision, recall
         aps = self.ap.compute()
         precs = self.prec.compute()
         recalls = self.recall.compute()
+        f1s = self.f1.compute()
+        aurocs = self.auroc.compute()
 
-        for class_type, ap, prec, recall in zip(self.classes, aps, precs, recalls):
+        for class_type, ap, prec, recall, f1, auroc in zip(
+            self.classes, aps, precs, recalls, f1s, aurocs
+        ):
             self.log(f"test/ap_{class_type}", ap)
             self.log(f"test/prec_{class_type}", prec)
             self.log(f"test/recall_{class_type}", recall)
+
+            self.log(f"test/f1_{class_type}", f1)
+            self.log(f"test/auroc_{class_type}", auroc)
