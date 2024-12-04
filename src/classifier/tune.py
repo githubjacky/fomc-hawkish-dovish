@@ -15,7 +15,7 @@ class Tuner:
         self.cfg = cfg
 
     def objective(self, trial):
-        batch_size = trial.suggest_int("batch_size", 256, 1024)
+        batch_size = trial.suggest_int("batch_size", 512, 1024)
         dm = setup_dm(self.cfg, batch_size)
 
         if self.cfg.nn in ["RNN", "GRU", "LSTM"]:
@@ -25,7 +25,8 @@ class Tuner:
             }
 
         nn_hparam = {"batch_size": batch_size} | nn_hparam | self.ff_hparam(trial)
-        lr = trial.suggest_float("lr", 3e-6, 0.1)
+        # lr = trial.suggest_float("lr", 3e-6, 0.1)
+        lr = 3e-4
 
         model = HawkishDovishClassifier(
             self.cfg.nn, lr, dm.sklearn_class_weight, dm.embed_dimension, **nn_hparam
@@ -68,7 +69,7 @@ class Tuner:
 
     def ff_hparam(self, trial: optuna.Trial):
         hparam = {
-            "ff_dropout": trial.suggest_float("ff_dropout", 0.1, 0.7),
+            "ff_dropout": trial.suggest_float("ff_dropout", 0.2, 0.7),
         }
 
         return hparam

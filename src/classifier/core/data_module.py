@@ -18,7 +18,7 @@ from sklearn.utils.class_weight import compute_class_weight
 import torch
 from torch.utils.data import DataLoader, Subset
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, PackedSequence
-from transformers import AutoConfig
+from transformers import AutoConfig, BertTokenizer, BertModel
 from typing import List, Dict, Literal
 
 
@@ -83,7 +83,7 @@ class BaseDataModule(L.LightningDataModule):
     # generate embedding for `sentence` in collate_fn
     def collate_fn(self, batch: List[Dict]) -> Dict:
         """
-        Batch lookes like this:
+        Batch looks like this:
         [
             {"index":..., "sentence":..., "year": ..., "label":..., "orig_index":...},
             ...
@@ -128,44 +128,46 @@ class BaseDataModule(L.LightningDataModule):
         )
 
 
-class MLPDataModule(BaseDataModule):
+class CLSPoolingDataModule(BaseDataModule):
     def __init__(
         self,
         batch_size: int = 256,
-        framework: Literal["flair", "sbert"] = "flair",
+        pooling_strategy: Literal["sbert", "cls", "last_layer_mean"] = "cls",
         embed_model_name: str = "bert-base-uncased",
-        flair_layers: str = "all",
-        flair_layer_mean=True,
     ):
         super().__init__(batch_size, embed_model_name)
 
-        self.embed_model = (
-            TransformerDocumentEmbeddings(
-                embed_model_name, layers=flair_layers, layer_mean=flair_layer_mean
-            )
-            if framework == "flair"
-            else SentenceTransformer(embed_model_name, device="cuda")
-        )
-        self.framework = framework
+        self.pooling_strategy = pooling_strategy
 
     def generate_embeds(self, batch: List[Dict]) -> torch.Tensor:
-        if self.framework == "flair":
-            sentences = [Sentence(elem["sentence"]) for elem in batch]
-            self.embed_model.embed(sentences)
+        sentences = [elem["sentence"] for elem in batch]
 
-            # denote embedding's dimension(bert: 768) as D
-            # denote `self.batch_size` as N
-            # the dimension of embed: N * D
-            embeds = torch.stack([sentence.embedding for sentence in sentences])
+        if self.pooling_strategy == "sbert":
+            model = SentenceTransformer(self.embed_model_name)
+            embeds = model.encode(sentences)
+
         else:
-            embeds = torch.tensor(
-                self.embed_model.encode([elem["sentence"] for elem in batch])
-            )
+            tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
+            model = BertModel.from_pretrained(self.embed_model_name)
+
+            def encode(text):
+                encoded_input = tokenizer(text, return_tensors="pt")
+                with torch.no_grad():
+                    output = model(**encoded_input)
+
+                return output.last_hidden_state.squeeze(0)
+
+            if self.pooling_strategy == "cls":
+                embeds = torch.stack([encode(text)[0] for text in sentences])
+            else:
+                embeds = torch.stack(
+                    [torch.mean(encode(text), dim=0) for text in sentences]
+                )
 
         return embeds
 
 
-class RNNFamilyDataModule(BaseDataModule):
+class RNNPoolingDataModule(BaseDataModule):
     """
     We we decide to use RNNFamily model, we not only need to generate embeddings, we also need to
     pad the sequce as setneces have different length. Normally, we rely on the zero padding, but

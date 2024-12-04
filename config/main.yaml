@@ -4,18 +4,18 @@ defaults:
 
 flair_embed:
   model_name: bert-base-uncased
-  flair_layers: -1
+  flair_layers: "all"
   flair_layer_mean: true
 
 sbert_embed:
   model_name: sentence-transformers/all-mpnet-base-v2 
 
-nn: LSTM
+nn: GRU
 # should adjust only in sentence-level classification
 # for word-level, flair's word embeddings is the only choice
 embed_framework: flair
-lr: 0.000379196455082216
-batch_size: 914
+lr: 0.000005124067949679128
+batch_size: 712
 random_state: 1126
 
 early_stop:
@@ -35,17 +35,17 @@ trainer:
   num_nodes: 1
   precision: 32-true
   max_epochs: 300
-  log_every_n_steps: 20
+  log_every_n_steps: 1
   check_val_every_n_epoch: 5
   # accumulate_grad_batches:
   # gradient_clip_val:
 
 tuning:
-  study_name: rnn_pooling_choose_nn_gru
+  study_name: rnn_pooling_choose_nn_gru_all_layers
   n_trials: 100
 
 RNNFamily:
-  hidden_size: 296
+  hidden_size: 1630
   num_layers: 1
   dropout: 0
   bidirectional: True
@@ -57,4 +57,4 @@ MLP:
   output_size: 128
 
 ff:
-  ff_dropout: 0.5247106064278061
+  ff_dropout: 0.17831726122503855

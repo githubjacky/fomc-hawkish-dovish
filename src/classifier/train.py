@@ -23,7 +23,7 @@ from omegaconf import DictConfig, OmegaConf
 from sklearn.model_selection import train_test_split
 from typing import Optional
 
-from core.data_module import RNNFamilyDataModule, MLPDataModule
+from core.data_module import RNNPoolingDataModule, CLSPoolingDataModule
 from core.lightning_module import HawkishDovishClassifier
 
 
@@ -33,14 +33,14 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
 
     # `RNNFamily` can only use flair's word embeddings
     if cfg.nn in ["RNN", "GRU", "LSTM"]:
-        dm = RNNFamilyDataModule(
+        dm = RNNPoolingDataModule(
             batch_size,
             cfg.flair_embed.model_name,
             str(cfg.flair_embed.flair_layers),
             cfg.flair_embed.flair_layer_mean,
         )
     else:
-        dm = MLPDataModule(
+        dm = CLSPoolingDataModule(
             batch_size,
             cfg.embed_framework,
             (
@@ -48,10 +48,6 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
                 if cfg.embed_framework == "flair"
                 else cfg.sbert_embed.model_name
             ),
-            # if we're using sbert, then it's meaningless to set these arguments
-            # but I keep them just in case we're using flair
-            cfg.flair_embed.flair_layers,
-            cfg.flair_embed.flair_layer_mean,
         )
 
     dm.prepare_data()
