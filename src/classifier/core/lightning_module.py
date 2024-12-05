@@ -26,7 +26,7 @@ from torchmetrics.classification import (
     F1Score,
     AUROC,
 )
-from typing import Union
+from typing import Union, Literal
 
 from .metrics import ClassificationMetricsLogger
 from .nn import RNNFamily, MLP
@@ -51,6 +51,9 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def __init__(
         self,
+        pooling_strategy: Literal[
+            "rnn", "sbert", "cls_non_trainable", "cls_trainable", "last_layer_mean"
+        ],
         model_name: str,
         lr: float,
         class_weights: torch.Tensor,
@@ -66,19 +69,31 @@ class HawkishDovishClassifier(L.LightningModule):
         self.class_weights = class_weights
         self.nn_hparam = nn_hparam
 
-        self.nn = get_nn(model_name, input_size, **nn_hparam)
-        self.nn_output_size = self.nn.output_size
+        if pooling_strategy == "rnn":
+            self.nn = get_nn(model_name, input_size, **nn_hparam)
+            self.nn_output_size = self.nn.output_size
 
-        # classification layers (ff-> linear)
-        self.ff = Sequential(
-            Linear(self.nn_output_size, self.nn_output_size),
-            Tanh(),
-            Linear(self.nn_output_size, self.nn_output_size),
-            Dropout(nn_hparam["ff_dropout"]),
-        )
-        self.linear = Linear(self.nn_output_size, self.num_classes)
+            # classification layers (ff-> linear)
+            self.ff = Sequential(
+                Linear(self.nn_output_size, self.nn_output_size),
+                Tanh(),
+                Linear(self.nn_output_size, self.nn_output_size),
+                Dropout(nn_hparam["ff_dropout"]),
+            )
+            self.linear = Linear(self.nn_output_size, self.num_classes)
 
-        self.layernorm = LayerNorm(self.nn_output_size)
+            self.layernorm = LayerNorm(self.nn_output_size)
+
+        else:
+            if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+                self.ff = Sequential(
+                    Linear(input_size, input_size),
+                    Tanh(),
+                    Linear(input_size, input_size),
+                    Dropout(nn_hparam["ff_dropout"]),
+                )
+            self.linear = Linear(input_size, self.num_classes)
+
         self.softmax = Softmax(dim=-1)
 
         # validation and test metrics
@@ -111,9 +126,17 @@ class HawkishDovishClassifier(L.LightningModule):
         return ClassificationMetricsLogger(self.logger)
 
     def forward(self, X):
-        outputs = self.nn(X)
-        outputs = self.ff(self.layernorm(outputs))
+        # remember to comment out this line if pooling strategy is not rnn
+        # outputs = self.nn(X)
+        # outputs = self.ff(self.layernorm(outputs))
+        # logits = self.linear(outputs)
+
+        # pooling strategy: cls_pooler or last_layer_mean_pooler
+        outputs = self.ff(X)
         logits = self.linear(outputs)
+
+        # pooling strategy: cls or last_layer_mean
+        # logits = self.linear(X)
 
         return logits
 

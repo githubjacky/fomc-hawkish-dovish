@@ -132,12 +132,29 @@ class CLSPoolingDataModule(BaseDataModule):
     def __init__(
         self,
         batch_size: int = 256,
-        pooling_strategy: Literal["sbert", "cls", "last_layer_mean"] = "cls",
+        pooling_strategy: Literal[
+            "sbert", "cls", "cls_pooler", "last_layer_mean", "last_layer_mean_pooler"
+        ] = "cls",
         embed_model_name: str = "bert-base-uncased",
     ):
         super().__init__(batch_size, embed_model_name)
 
         self.pooling_strategy = pooling_strategy
+
+        if pooling_strategy != "sbert":
+            self.tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
+            self.model = BertModel.from_pretrained(self.embed_model_name)
+
+    def bert_encode(self, text: str, pooler_output=False):
+        encoded_input = self.tokenizer(text, return_tensors="pt")
+        with torch.no_grad():
+            output = self.model(**encoded_input)
+
+        return (
+            output.last_hidden_state.squeeze(0)
+            if not pooler_output
+            else output.pooler_output.squeeze(0)
+        )
 
     def generate_embeds(self, batch: List[Dict]) -> torch.Tensor:
         sentences = [elem["sentence"] for elem in batch]
@@ -146,23 +163,20 @@ class CLSPoolingDataModule(BaseDataModule):
             model = SentenceTransformer(self.embed_model_name)
             embeds = model.encode(sentences)
 
+        elif self.pooling_strategy == "cls":
+            embeds = torch.stack([self.bert_encode(text)[0] for text in sentences])
+
+        elif self.pooling_strategy == "cls_pooler":
+            # [0] means the first token
+            embeds = torch.stack(
+                [self.bert_encode(text, pooler_output=True) for text in sentences]
+            )
+
+        # last_layer_mean or last_layer_mean_pooler
         else:
-            tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
-            model = BertModel.from_pretrained(self.embed_model_name)
-
-            def encode(text):
-                encoded_input = tokenizer(text, return_tensors="pt")
-                with torch.no_grad():
-                    output = model(**encoded_input)
-
-                return output.last_hidden_state.squeeze(0)
-
-            if self.pooling_strategy == "cls":
-                embeds = torch.stack([encode(text)[0] for text in sentences])
-            else:
-                embeds = torch.stack(
-                    [torch.mean(encode(text), dim=0) for text in sentences]
-                )
+            embeds = torch.stack(
+                [torch.mean(self.bert_encode(text), dim=0) for text in sentences]
+            )
 
         return embeds
 

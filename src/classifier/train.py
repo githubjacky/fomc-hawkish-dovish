@@ -32,7 +32,7 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
     batch_size = cfg.batch_size if batch_size is None else batch_size
 
     # `RNNFamily` can only use flair's word embeddings
-    if cfg.nn in ["RNN", "GRU", "LSTM"]:
+    if cfg.pooling_strategy == "rnn":
         dm = RNNPoolingDataModule(
             batch_size,
             cfg.flair_embed.model_name,
@@ -42,11 +42,11 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
     else:
         dm = CLSPoolingDataModule(
             batch_size,
-            cfg.embed_framework,
+            cfg.pooling_strategy,
             (
-                cfg.flair_embed.model_name
-                if cfg.embed_framework == "flair"
-                else cfg.sbert_embed.model_name
+                cfg.sbert_embed.model_name
+                if cfg.pooling_strategy == "sbert"
+                else cfg.flair_embed.model_name
             ),
         )
 
@@ -64,12 +64,24 @@ def setup_dm(cfg: DictConfig, batch_size: Optional[int] = None):
 
 
 def setup_model(dm, cfg: DictConfig):
-    if cfg.nn in ["RNN", "GRU", "LSTM"]:
-        nn_hparam = OmegaConf.to_container(cfg.RNNFamily)
+    if cfg.pooling_strategy == "rnn":
+        nn_hparam = OmegaConf.to_container(cfg.RNNFamily) | OmegaConf.to_container(
+            cfg.ff
+        )
 
-    nn_hparam = nn_hparam | OmegaConf.to_container(cfg.ff)
+    elif cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+        nn_hparam = OmegaConf.to_container(cfg.ff)
+
+    else:
+        nn_hparam = {}
+
     model = HawkishDovishClassifier(
-        cfg.nn, cfg.lr, dm.sklearn_class_weight, dm.embed_dimension, **nn_hparam
+        cfg.pooling_strategy,
+        cfg.nn,
+        cfg.lr,
+        dm.sklearn_class_weight,
+        dm.embed_dimension,
+        **nn_hparam,
     )
 
     return model

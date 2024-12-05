@@ -2,6 +2,10 @@ defaults:
   - _self_
 
 
+# options: rnn, sbert, cls, cls_pooler, last_layer_mean, last_layer_mean_pooler
+# pooler means to train the BERT pooling layer
+pooling_strategy: cls_pooler
+
 flair_embed:
   model_name: bert-base-uncased
   flair_layers: "all"
@@ -13,7 +17,6 @@ sbert_embed:
 nn: GRU
 # should adjust only in sentence-level classification
 # for word-level, flair's word embeddings is the only choice
-embed_framework: flair
 lr: 0.000005124067949679128
 batch_size: 712
 random_state: 1126
@@ -41,8 +44,8 @@ trainer:
   # gradient_clip_val:
 
 tuning:
-  study_name: rnn_pooling_choose_nn_gru_all_layers
-  n_trials: 100
+  study_name: cls_pooling_cls_pooler
+  n_trials: 75
 
 RNNFamily:
   hidden_size: 1630

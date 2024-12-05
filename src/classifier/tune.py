@@ -15,21 +15,35 @@ class Tuner:
         self.cfg = cfg
 
     def objective(self, trial):
-        batch_size = trial.suggest_int("batch_size", 512, 1024)
+        batch_size = trial.suggest_int("batch_size", 256, 1536)
         dm = setup_dm(self.cfg, batch_size)
 
-        if self.cfg.nn in ["RNN", "GRU", "LSTM"]:
-            nn_hparam = self.rnn_hparam(trial) | {
-                "flair_layers": dm.flair_layers,
-                "embed_model_name": dm.embed_model_name,
-            }
+        nn_hparam = {
+            "batch_size": batch_size,
+            "embed_model_name": dm.embed_model_name,
+        }
 
-        nn_hparam = {"batch_size": batch_size} | nn_hparam | self.ff_hparam(trial)
-        # lr = trial.suggest_float("lr", 3e-6, 0.1)
-        lr = 3e-4
+        if self.cfg.pooling_strategy == "rnn":
+            nn_hparam = (
+                self.rnn_hparam(trial)
+                | {
+                    "flair_layers": dm.flair_layers,
+                }
+                | self.ff_hparam(trial)
+                | nn_hparam
+            )
+        elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+            nn_hparam = self.ff_hparam(trial) | nn_hparam
+
+        lr = trial.suggest_float("lr", 3e-6, 3e-3)
 
         model = HawkishDovishClassifier(
-            self.cfg.nn, lr, dm.sklearn_class_weight, dm.embed_dimension, **nn_hparam
+            self.cfg.pooling_strategy,
+            self.cfg.nn,
+            lr,
+            dm.sklearn_class_weight,
+            dm.embed_dimension,
+            **nn_hparam,
         )
 
         logger = MLFlowLogger(
