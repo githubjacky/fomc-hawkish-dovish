@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 uv run python src/classifier/train.py
+CUDA_VISIBLE_DEVICES=2 uv run python src/classifier/train.py

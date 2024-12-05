@@ -23,8 +23,10 @@ from torchmetrics.classification import (
     AveragePrecision,
     Precision,
     Recall,
+    F1Score,
+    AUROC,
 )
-from typing import Union
+from typing import Union, Literal
 
 from .metrics import ClassificationMetricsLogger
 from .nn import RNNFamily, MLP
@@ -49,6 +51,9 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def __init__(
         self,
+        pooling_strategy: Literal[
+            "rnn", "sbert", "cls_non_trainable", "cls_trainable", "last_layer_mean"
+        ],
         model_name: str,
         lr: float,
         class_weights: torch.Tensor,
@@ -64,19 +69,31 @@ class HawkishDovishClassifier(L.LightningModule):
         self.class_weights = class_weights
         self.nn_hparam = nn_hparam
 
-        self.nn = get_nn(model_name, input_size, **nn_hparam)
-        self.nn_output_size = self.nn.output_size
+        if pooling_strategy == "rnn":
+            self.nn = get_nn(model_name, input_size, **nn_hparam)
+            self.nn_output_size = self.nn.output_size
 
-        # classification layers (ff-> linear)
-        self.ff = Sequential(
-            Linear(self.nn_output_size, self.nn_output_size),
-            Tanh(),
-            Linear(self.nn_output_size, self.nn_output_size),
-            Dropout(nn_hparam["ff_dropout"]),
-        )
-        self.linear = Linear(self.nn_output_size, self.num_classes)
+            # classification layers (ff-> linear)
+            self.ff = Sequential(
+                Linear(self.nn_output_size, self.nn_output_size),
+                Tanh(),
+                Linear(self.nn_output_size, self.nn_output_size),
+                Dropout(nn_hparam["ff_dropout"]),
+            )
+            self.linear = Linear(self.nn_output_size, self.num_classes)
 
-        self.layernorm = LayerNorm(self.nn_output_size)
+            self.layernorm = LayerNorm(self.nn_output_size)
+
+        else:
+            if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+                self.ff = Sequential(
+                    Linear(input_size, input_size),
+                    Tanh(),
+                    Linear(input_size, input_size),
+                    Dropout(nn_hparam["ff_dropout"]),
+                )
+            self.linear = Linear(input_size, self.num_classes)
+
         self.softmax = Softmax(dim=-1)
 
         # validation and test metrics
@@ -90,6 +107,16 @@ class HawkishDovishClassifier(L.LightningModule):
         self.prec = Precision("multiclass", num_classes=self.num_classes, average=None)
         self.recall = Recall("multiclass", num_classes=self.num_classes, average=None)
 
+        self.macro_f1 = F1Score(
+            "multiclass", num_classes=self.num_classes, average="macro"
+        )
+        self.f1 = F1Score("multiclass", num_classes=self.num_classes, average=None)
+
+        self.macro_auroc = AUROC(
+            "multiclass", num_classes=self.num_classes, average="macro"
+        )
+        self.auroc = AUROC("multiclass", num_classes=self.num_classes, average=None)
+
     @cached_property
     def classes(self):
         return ["dovish", "hawkish", "neutral"]
@@ -99,9 +126,17 @@ class HawkishDovishClassifier(L.LightningModule):
         return ClassificationMetricsLogger(self.logger)
 
     def forward(self, X):
-        outputs = self.nn(X)
-        outputs = self.ff(self.layernorm(outputs))
+        # remember to comment out this line if pooling strategy is not rnn
+        # outputs = self.nn(X)
+        # outputs = self.ff(self.layernorm(outputs))
+        # logits = self.linear(outputs)
+
+        # pooling strategy: cls_pooler or last_layer_mean_pooler
+        outputs = self.ff(X)
         logits = self.linear(outputs)
+
+        # pooling strategy: cls or last_layer_mean
+        # logits = self.linear(X)
 
         return logits
 
@@ -165,19 +200,34 @@ class HawkishDovishClassifier(L.LightningModule):
         self.prec.update(probs, y)
         self.recall.update(probs, y)
 
+        self.macro_f1.update(probs, y)
+        self.f1.update(probs, y)
+
+        self.macro_auroc.update(probs, y)
+        self.auroc.update(probs, y)
+
     def on_test_epoch_end(self):
         # log precision recall curves (table)
         # prec, recall, thres = self.pr_curve.compute()
         # self.metrics_logger.log_pr_curves("test", prec, recall, thres)
 
         self.log("test/macro_avg_prec", self.macro_ap)
+        self.log("test/macro_f1", self.macro_f1)
+        self.log("test/macro_auroc", self.macro_auroc)
 
         # log individual average precision, precision, recall
         aps = self.ap.compute()
         precs = self.prec.compute()
         recalls = self.recall.compute()
+        f1s = self.f1.compute()
+        aurocs = self.auroc.compute()
 
-        for class_type, ap, prec, recall in zip(self.classes, aps, precs, recalls):
+        for class_type, ap, prec, recall, f1, auroc in zip(
+            self.classes, aps, precs, recalls, f1s, aurocs
+        ):
             self.log(f"test/ap_{class_type}", ap)
             self.log(f"test/prec_{class_type}", prec)
             self.log(f"test/recall_{class_type}", recall)
+
+            self.log(f"test/f1_{class_type}", f1)
+            self.log(f"test/auroc_{class_type}", auroc)
