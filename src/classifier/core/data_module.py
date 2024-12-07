@@ -10,7 +10,7 @@
 
 from datasets import load_dataset
 from flair.data import Sentence
-from flair.embeddings import TransformerDocumentEmbeddings, TransformerWordEmbeddings
+from flair.embeddings import TransformerWordEmbeddings
 import lightning as L
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -58,8 +58,8 @@ class BaseDataModule(L.LightningDataModule):
         """
         `train_idx` and `val_idx` are the results of `sklearn.model_selection.train_test_split`
         """
-        self.train_data = Subset(self.train_dataset, train_idx)
-        self.val_data = Subset(self.train_dataset, val_idx)
+        self.train_data = Subset(self.train_dataset, train_idx.tolist())
+        self.val_data = Subset(self.train_dataset, val_idx.tolist())
 
         self.len_train_data = len(train_idx)
         self.len_val_data = len(val_idx)
@@ -90,8 +90,8 @@ class BaseDataModule(L.LightningDataModule):
         ]
         The length of batch is self.batch_size.
 
-        If a key is a numeric value, then the output of this function is
-        converted to torch.Tensor.
+        If a value of the dictionary instance is a numeric value of list of numeric values,
+        then that value will be converted to torch.Tensor.
         For example:
         {
             "year": tensor([2011, 2004, ...])
@@ -108,7 +108,9 @@ class BaseDataModule(L.LightningDataModule):
             self.train_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            # num_workers=63,
+            num_workers=2,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
     def val_dataloader(self):
@@ -116,7 +118,9 @@ class BaseDataModule(L.LightningDataModule):
             self.val_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            # num_workers=63,
+            num_workers=2,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
     def test_dataloader(self):
@@ -124,7 +128,9 @@ class BaseDataModule(L.LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            # num_workers=63,
+            num_workers=2,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
 
@@ -141,44 +147,85 @@ class CLSPoolingDataModule(BaseDataModule):
 
         self.pooling_strategy = pooling_strategy
 
-        if pooling_strategy != "sbert":
-            self.tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
-            self.model = BertModel.from_pretrained(self.embed_model_name)
+    @staticmethod
+    def cache_embeds_sbert(instance: Dict, model: SentenceTransformer) -> Dict:
+        instance["embeds"] = model.encode(instance["sentence"])
 
-    def bert_encode(self, text: str, pooler_output=False):
-        encoded_input = self.tokenizer(text, return_tensors="pt")
+        return instance
+
+    @staticmethod
+    def cache_embeds_cls(instance: Dict, tokenizer, model) -> Dict:
+        encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
         with torch.no_grad():
-            output = self.model(**encoded_input)
+            output = model(**encoded_input)
 
-        return (
-            output.last_hidden_state.squeeze(0)
-            if not pooler_output
-            else output.pooler_output.squeeze(0)
-        )
+        instance["embeds"] = output.last_hidden_state.squeeze(0)[0]
 
-    def generate_embeds(self, batch: List[Dict]) -> torch.Tensor:
-        sentences = [elem["sentence"] for elem in batch]
+        return instance
 
+    @staticmethod
+    def cache_embeds_cls_pooler(instance: Dict, tokenizer, model) -> Dict:
+        encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
+        encoded_input = {k: v.cuda() for k, v in encoded_input.items()}
+
+        with torch.no_grad():
+            output = model(**encoded_input)
+
+        instance["embeds"] = output.pooler_output.squeeze(0)
+
+        return instance
+
+    @staticmethod
+    def cache_embeds_last_layer_mean(instance: Dict, tokenizer, model) -> Dict:
+        encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
+        with torch.no_grad():
+            output = model(**encoded_input)
+
+        instance["embeds"] = torch.mean(output.last_hidden_state.squeeze(0), dim=0)
+
+        return instance
+
+    def cache_embeds(self, dataset) -> torch.Tensor:
         if self.pooling_strategy == "sbert":
             model = SentenceTransformer(self.embed_model_name)
-            embeds = model.encode(sentences)
+            return dataset.map(self.cache_embeds_sbert, fn_kwargs={"model": model})
 
-        elif self.pooling_strategy == "cls":
-            embeds = torch.stack([self.bert_encode(text)[0] for text in sentences])
-
-        elif self.pooling_strategy == "cls_pooler":
-            # [0] means the first token
-            embeds = torch.stack(
-                [self.bert_encode(text, pooler_output=True) for text in sentences]
-            )
-
-        # last_layer_mean or last_layer_mean_pooler
         else:
-            embeds = torch.stack(
-                [torch.mean(self.bert_encode(text), dim=0) for text in sentences]
-            )
+            tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
+            model = BertModel.from_pretrained(self.embed_model_name).cuda()
 
-        return embeds
+            if self.pooling_strategy == "cls":
+                return dataset.map(
+                    self.cache_embeds_cls,
+                    fn_kwargs={"tokenizer": tokenizer, "model": model},
+                )
+
+            elif self.pooling_strategy == "cls_pooler":
+                return dataset.map(
+                    self.cache_embeds_cls_pooler,
+                    fn_kwargs={"tokenizer": tokenizer, "model": model},
+                )
+
+            # last_layer_mean or last_layer_mean_pooler
+            else:
+                return dataset.map(
+                    self.cache_embeds_last_layer_mean,
+                    fn_kwargs={"tokenizer": tokenizer, "model": model},
+                )
+
+    def prepare_data(self) -> None:
+        dataset = load_dataset("gtfintechlab/fomc_communication")
+        train_dataset = dataset["train"]
+        test_dataset = dataset["test"]
+
+        self.train_dataset = self.cache_embeds(train_dataset)
+        self.test_dataset = self.cache_embeds(test_dataset)
+
+        self.len_train_dataset = len(self.train_dataset)
+        self.len_test_dataset = len(self.test_dataset)
+
+    def generate_embeds(self, batch: List[Dict]) -> torch.Tensor:
+        return torch.tensor([elem["embeds"] for elem in batch])
 
 
 class RNNPoolingDataModule(BaseDataModule):
