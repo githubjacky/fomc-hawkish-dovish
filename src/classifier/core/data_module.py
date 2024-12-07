@@ -156,6 +156,8 @@ class CLSPoolingDataModule(BaseDataModule):
     @staticmethod
     def cache_embeds_cls(instance: Dict, tokenizer, model) -> Dict:
         encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
+        encoded_input = {k: v.cuda() for k, v in encoded_input.items()}
+
         with torch.no_grad():
             output = model(**encoded_input)
 
@@ -178,6 +180,8 @@ class CLSPoolingDataModule(BaseDataModule):
     @staticmethod
     def cache_embeds_last_layer_mean(instance: Dict, tokenizer, model) -> Dict:
         encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
+        encoded_input = {k: v.cuda() for k, v in encoded_input.items()}
+
         with torch.no_grad():
             output = model(**encoded_input)
 
