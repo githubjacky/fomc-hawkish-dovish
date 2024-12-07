@@ -105,7 +105,7 @@ def setup_trainer(cfg: DictConfig, logger):
         devices=cfg.trainer.devices,
         # num_nodes = 1,
         # precision = "32-true"
-        enable_model_summary=False,
+        # enable_model_summary=False,
         logger=logger,
         callbacks=callbacks,
         # fast_dev_run = True
@@ -138,8 +138,11 @@ def main(cfg: DictConfig):
         log_model="all",
         save_dir="wandb",
     )
-    logger.watch(model.nn, log="all")
-    logger.watch(model.ff, log="all")
+    if cfg.pooling_strategy == "rnn":
+        logger.watch(model.nn, log="all")
+        logger.watch(model.ff, log="all")
+    if cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+        logger.watch(model.ff, log="all")
 
     # logger = MLFlowLogger(
     #     experiment_name="test",
