@@ -4,7 +4,8 @@ defaults:
 
 # options: rnn, sbert, cls, cls_pooler, last_layer_mean, last_layer_mean_pooler
 # pooler means to train the BERT pooling layer
-pooling_strategy: cls_pooler
+pooling_strategy: last_layer_mean_pooler
+
 
 flair_embed:
   model_name: bert-base-uncased
@@ -37,15 +38,15 @@ trainer:
     - 0
   num_nodes: 1
   precision: 32-true
-  max_epochs: 10
+  max_epochs: 300
   log_every_n_steps: 1
   check_val_every_n_epoch: 5
   # accumulate_grad_batches:
   # gradient_clip_val:
 
 tuning:
-  study_name: cls_pooling_cls_pooler
-  n_trials: 75
+  study_name: cls_pooling_last_layer_mean_pooler_v2
+  n_trials: 100
 
 RNNFamily:
   hidden_size: 1630
