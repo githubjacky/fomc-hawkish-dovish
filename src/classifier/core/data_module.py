@@ -12,13 +12,14 @@ from datasets import load_dataset
 from flair.data import Sentence
 from flair.embeddings import TransformerWordEmbeddings
 import lightning as L
+from loguru import logger
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.utils.class_weight import compute_class_weight
 import torch
 from torch.utils.data import DataLoader, Subset
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, PackedSequence
-from transformers import AutoConfig, BertTokenizer, BertModel
+from transformers import AutoConfig, AutoTokenizer, AutoModel
 from typing import List, Dict, Literal
 
 
@@ -37,6 +38,7 @@ class BaseDataModule(L.LightningDataModule):
         self.batch_size = batch_size
 
         # it's identified in subclass
+        logger.info(f"embed model name: {embed_model_name}")
         self.embed_model_name = embed_model_name
         self.embed_model = None
 
@@ -108,8 +110,8 @@ class BaseDataModule(L.LightningDataModule):
             self.train_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=2,
-            pin_memory=True,
+            num_workers=4,
+            # pin_memory=True,
             persistent_workers=True,
         )
 
@@ -118,8 +120,8 @@ class BaseDataModule(L.LightningDataModule):
             self.val_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=2,
-            pin_memory=True,
+            num_workers=4,
+            # pin_memory=True,
             persistent_workers=True,
         )
 
@@ -128,8 +130,8 @@ class BaseDataModule(L.LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=2,
-            pin_memory=True,
+            num_workers=4,
+            # pin_memory=True,
             persistent_workers=True,
         )
 
@@ -139,17 +141,35 @@ class CLSPoolingDataModule(BaseDataModule):
         self,
         batch_size: int = 256,
         pooling_strategy: Literal[
-            "sbert", "cls", "cls_pooler", "last_layer_mean", "last_layer_mean_pooler"
+            "sbert",
+            "cls",
+            "cls_pooler",
+            "cls_pooler_output",
+            "last_layer_mean",
+            "last_layer_mean_pooler",
         ] = "cls",
         embed_model_name: str = "bert-base-uncased",
     ):
         super().__init__(batch_size, embed_model_name)
 
+        logger.info(f"pooling strategy: {pooling_strategy}")
         self.pooling_strategy = pooling_strategy
 
     @staticmethod
     def cache_embeds_sbert(instance: Dict, model: SentenceTransformer) -> Dict:
         instance["embeds"] = model.encode(instance["sentence"])
+
+        return instance
+
+    @staticmethod
+    def cache_embeds_cls_pooler_output(instance: Dict, tokenizer, model) -> Dict:
+        encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
+        encoded_input = {k: v.cuda() for k, v in encoded_input.items()}
+
+        with torch.no_grad():
+            output = model(**encoded_input)
+
+        instance["embeds"] = output.pooler_output.squeeze(0)
 
         return instance
 
@@ -162,18 +182,6 @@ class CLSPoolingDataModule(BaseDataModule):
             output = model(**encoded_input)
 
         instance["embeds"] = output.last_hidden_state.squeeze(0)[0]
-
-        return instance
-
-    @staticmethod
-    def cache_embeds_cls_pooler(instance: Dict, tokenizer, model) -> Dict:
-        encoded_input = tokenizer(instance["sentence"], return_tensors="pt")
-        encoded_input = {k: v.cuda() for k, v in encoded_input.items()}
-
-        with torch.no_grad():
-            output = model(**encoded_input)
-
-        instance["embeds"] = output.pooler_output.squeeze(0)
 
         return instance
 
@@ -195,18 +203,18 @@ class CLSPoolingDataModule(BaseDataModule):
             return dataset.map(self.cache_embeds_sbert, fn_kwargs={"model": model})
 
         else:
-            tokenizer = BertTokenizer.from_pretrained(self.embed_model_name)
-            model = BertModel.from_pretrained(self.embed_model_name).cuda()
+            tokenizer = AutoTokenizer.from_pretrained(self.embed_model_name)
+            model = AutoModel.from_pretrained(self.embed_model_name).cuda()
 
-            if self.pooling_strategy == "cls":
+            if self.pooling_strategy == "cls_pooler_output":
                 return dataset.map(
-                    self.cache_embeds_cls,
+                    self.cache_embeds_cls_pooler_output,
                     fn_kwargs={"tokenizer": tokenizer, "model": model},
                 )
 
-            elif self.pooling_strategy == "cls_pooler":
+            elif self.pooling_strategy in ["cls", "cls_pooler"]:
                 return dataset.map(
-                    self.cache_embeds_cls_pooler,
+                    self.cache_embeds_cls,
                     fn_kwargs={"tokenizer": tokenizer, "model": model},
                 )
 

@@ -126,17 +126,17 @@ class HawkishDovishClassifier(L.LightningModule):
         return ClassificationMetricsLogger(self.logger)
 
     def forward(self, X):
-        # remember to comment out this line if pooling strategy is not rnn
+        # pooling strategy: rnn
         # outputs = self.nn(X)
         # outputs = self.ff(self.layernorm(outputs))
         # logits = self.linear(outputs)
 
         # pooling strategy: cls_pooler or last_layer_mean_pooler
-        outputs = self.ff(X)
-        logits = self.linear(outputs)
+        # outputs = self.ff(X)
+        # logits = self.linear(outputs)
 
-        # pooling strategy: cls or last_layer_mean
-        # logits = self.linear(X)
+        # pooling strategy: cls or cls_pooler_output or last_layer_mean
+        logits = self.linear(X)
 
         return logits
 
@@ -168,7 +168,7 @@ class HawkishDovishClassifier(L.LightningModule):
         # metrics calculation
         probs = self.softmax(logits)
 
-        self.pr_curve.update(probs, y)
+        # self.pr_curve.update(probs, y)
         self.macro_ap.update(probs, y)
         self.ap.update(probs, y)
         self.prec.update(probs, y)
@@ -176,7 +176,7 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def on_validation_epoch_end(self):
         # macro means directly average all average precision from different classes
-        self.log("val/macro_avg_prec", self.macro_ap)
+        self.log("val/macro_avg_prec", self.macro_ap.compute())
 
         # log individual average precision, precision, recall
         aps = self.ap.compute()
@@ -193,7 +193,7 @@ class HawkishDovishClassifier(L.LightningModule):
 
         # metrics calculation
         probs = self.softmax(self(X))
-        self.pr_curve.update(probs, y)
+        # self.pr_curve.update(probs, y)
 
         self.macro_ap.update(probs, y)
         self.ap.update(probs, y)
@@ -211,9 +211,9 @@ class HawkishDovishClassifier(L.LightningModule):
         # prec, recall, thres = self.pr_curve.compute()
         # self.metrics_logger.log_pr_curves("test", prec, recall, thres)
 
-        self.log("test/macro_avg_prec", self.macro_ap)
-        self.log("test/macro_f1", self.macro_f1)
-        self.log("test/macro_auroc", self.macro_auroc)
+        self.log("test/macro_avg_prec", self.macro_ap.compute())
+        self.log("test/macro_f1", self.macro_f1.compute())
+        self.log("test/macro_auroc", self.macro_auroc.compute())
 
         # log individual average precision, precision, recall
         aps = self.ap.compute()
