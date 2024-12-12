@@ -3,9 +3,9 @@ x-volume-deploy: &volume-deploy
     - type: bind
       source: ..
       target: /fomc-hawkish-dovish
-    - type: bind
-      source: /usr/local/cuda-12.4
-      target: /usr/local/cuda-12.4
+    # - type: bind
+    #   source: /usr/local/cuda-12.4
+    #   target: /usr/local/cuda-12.4
   deploy:
     resources:
       reservations:
