@@ -2,24 +2,28 @@ defaults:
   - _self_
 
 
-# options: rnn, sbert, cls, cls_pooler, last_layer_mean, last_layer_mean_pooler
+# options: rnn, sbert, cls, cls_pooler, cls_pooler_output, last_layer_mean, last_layer_mean_pooler
 # pooler means to train the BERT pooling layer
-pooling_strategy: cls_pooler
+pooling_strategy: cls
 
+lr: 0.0011362651459171757
+batch_size: 265
 
+tuning:
+  study_name: cls_distilroberta-finetuned-financial-text-classification
+  n_trials: 300
+  
 flair_embed:
-  model_name: bert-base-uncased
+  model_name: nickmuchi/distilroberta-finetuned-financial-text-classification
   flair_layers: "all"
   flair_layer_mean: true
 
 sbert_embed:
-  model_name: sentence-transformers/all-mpnet-base-v2 
+  model_name: sentence-transformers/multi-qa-mpnet-base-dot-v1
 
-nn: GRU
+nn: LSTM
 # should adjust only in sentence-level classification
 # for word-level, flair's word embeddings is the only choice
-lr: 0.0027237892828027195
-batch_size: 597
 random_state: 1126
 
 early_stop:
@@ -38,18 +42,15 @@ trainer:
     - 0
   num_nodes: 1
   precision: 32-true
-  max_epochs: 300
+  max_epochs: 5000
   log_every_n_steps: 1
   check_val_every_n_epoch: 5
   # accumulate_grad_batches:
   # gradient_clip_val:
 
-tuning:
-  study_name: cls_pooling_sbert_v1
-  n_trials: 100
 
 RNNFamily:
-  hidden_size: 1630
+  hidden_size: 1072
   num_layers: 1
   dropout: 0
   bidirectional: True
@@ -61,4 +62,5 @@ MLP:
   output_size: 128
 
 ff:
-  ff_dropout: 0.6830701281210114
+  ff_input_size: 256
+  ff_dropout: 0.21807975814570435

@@ -32,7 +32,12 @@ class Tuner:
                 | self.ff_hparam(trial)
                 | nn_hparam
             )
-        elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+        elif self.cfg.pooling_strategy in [
+            "sbert",
+            "cls_pooler",
+            "last_layer_mean_pooler",
+        ]:
+            # elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
             nn_hparam = self.ff_hparam(trial) | nn_hparam
 
         lr = trial.suggest_float("lr", 3e-6, 3e-3)
@@ -71,7 +76,7 @@ class Tuner:
 
     def rnn_hparam(self, trial: optuna.Trial):
         hparam = {
-            "hidden_size": trial.suggest_int("hidden_size", 256, 2048),
+            "hidden_size": trial.suggest_int("hidden_size", 128, 2048),
             # "num_layers": trial.suggest_int("num_layers", 1, 20),
             "num_layers": 1,
             # "dropout": trial.suggest_float("dropout", 0.1, 0.9)
@@ -83,6 +88,7 @@ class Tuner:
 
     def ff_hparam(self, trial: optuna.Trial):
         hparam = {
+            "ff_input_size": trial.suggest_int("ff_input_size", 8, 640),
             "ff_dropout": trial.suggest_float("ff_dropout", 0.2, 0.7),
         }
 
