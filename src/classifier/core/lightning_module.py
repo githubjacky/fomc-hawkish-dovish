@@ -66,6 +66,7 @@ class HawkishDovishClassifier(L.LightningModule):
         """
         super().__init__()
 
+        self.input_size = input_size
         self.lr = lr
         self.class_weights = class_weights
         self.nn_hparam = nn_hparam
@@ -86,23 +87,30 @@ class HawkishDovishClassifier(L.LightningModule):
             self.layernorm = LayerNorm(self.nn_output_size)
 
         else:
-            # if pooling_strategy == "sbert":
-            #     self.ff = Sequential(
-            #         Linear(input_size, nn_hparam["ff_input_size"]),
-            #         ReLU(),
-            #         # Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
-            #         Dropout(nn_hparam["ff_dropout"]),
-            #     )
-            #     self.linear = Linear(nn_hparam["ff_input_size"], self.num_classes)
-            # else:
-            if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
-                self.ff = Sequential(
-                    Linear(input_size, input_size),
-                    Tanh(),
-                    Linear(input_size, input_size),
+            if pooling_strategy == "sbert":
+                self.proj = Sequential(
+                    Linear(input_size, nn_hparam["ff_input_size"]),
+                    ReLU(),
                     Dropout(nn_hparam["ff_dropout"]),
                 )
-            self.linear = Linear(input_size, self.num_classes)
+
+                self.ff = Sequential(
+                    Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+                    ReLU(),
+                    # Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+                    Dropout(nn_hparam["ff_dropout"]),
+                )
+
+                self.linear = Linear(nn_hparam["ff_input_size"], self.num_classes)
+            else:
+                if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+                    self.ff = Sequential(
+                        Linear(input_size, input_size),
+                        Tanh(),
+                        Linear(input_size, input_size),
+                        Dropout(nn_hparam["ff_dropout"]),
+                    )
+                self.linear = Linear(input_size, self.num_classes)
 
         self.softmax = Softmax(dim=-1)
 
@@ -142,11 +150,14 @@ class HawkishDovishClassifier(L.LightningModule):
         # logits = self.linear(outputs)
 
         # pooling strategy: cls_pooler or last_layer_mean_pooler
-        # outputs = self.ff(X)
+        # outputs = self.ff()
         # logits = self.linear(outputs)
 
+        outputs = self.proj(X)
+        logits = self.linear(outputs)
+
         # pooling strategy: cls or cls_pooler_output or last_layer_mean
-        logits = self.linear(X)
+        # logits = self.linear(X)
 
         return logits
 
@@ -161,7 +172,35 @@ class HawkishDovishClassifier(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         X, y = batch["embed"], batch["label"]
-        loss = F.cross_entropy(self(X), y, weight=self.class_weights.cuda())
+
+        # cross entropy loss
+        # loss = F.cross_entropy(self(X), y, weight=self.class_weights.cuda())
+
+        # hierarchical loss:
+        logits = self(X)
+        binary_logits = logits[:, 2]  # [batch_size, 1] for class3
+        subclass_logits = logits[:, :2]  # [batch_size, 2] for class 1&2
+
+        loss = 0
+        # first stage (identify whether class 2 (neutral) or not)
+        mask = y == 2
+        if mask.any():
+            loss += F.binary_cross_entropy_with_logits(
+                binary_logits,
+                mask.float(),
+            )
+
+        # second stage (given not class 3, identifying class 1 or 2)
+        mask = y != 2
+        if mask.any():
+            subclass_binary_labels = (y[mask] == 0).float()
+
+            subclass_loss = F.binary_cross_entropy_with_logits(
+                subclass_logits[mask][:, 0],  # take first logit as class1 score
+                subclass_binary_labels,
+            )
+            loss += subclass_loss
+
         self.log("train/loss", loss)
 
         return loss

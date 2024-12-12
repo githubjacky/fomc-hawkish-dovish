@@ -88,7 +88,7 @@ class Tuner:
 
     def ff_hparam(self, trial: optuna.Trial):
         hparam = {
-            "ff_input_size": trial.suggest_int("ff_input_size", 8, 640),
+            "ff_input_size": trial.suggest_int("ff_input_size", 64, 1536),
             "ff_dropout": trial.suggest_float("ff_dropout", 0.2, 0.7),
         }
 
