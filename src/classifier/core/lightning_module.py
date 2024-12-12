@@ -14,6 +14,7 @@ from torch.nn import (
     LayerNorm,
     Linear,
     Tanh,
+    ReLU,
     Sequential,
     Softmax,
 )
@@ -85,6 +86,15 @@ class HawkishDovishClassifier(L.LightningModule):
             self.layernorm = LayerNorm(self.nn_output_size)
 
         else:
+            # if pooling_strategy == "sbert":
+            #     self.ff = Sequential(
+            #         Linear(input_size, nn_hparam["ff_input_size"]),
+            #         ReLU(),
+            #         # Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+            #         Dropout(nn_hparam["ff_dropout"]),
+            #     )
+            #     self.linear = Linear(nn_hparam["ff_input_size"], self.num_classes)
+            # else:
             if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
                 self.ff = Sequential(
                     Linear(input_size, input_size),
