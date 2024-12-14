@@ -2,19 +2,20 @@ defaults:
   - _self_
 
 
-# options: rnn, sbert, cls, cls_pooler, cls_pooler_output, last_layer_mean, last_layer_mean_pooler
 # pooler means to train the BERT pooling layer
-pooling_strategy: last_layer_mean
+# options: rnn, sbert, cls, cls_pooler, cls_pooler_output, last_layer_mean, last_layer_mean_pooler
+# (fine-tune) options: finetune_pooler_output, finetune_cls finetune_last_layer_mean finetune_last_layer_mean_pooler
+pooling_strategy: finetune_pooler_output
 
 lr: 0.0005367370559450229
 batch_size: 1263
 
 tuning:
-  study_name: llm_financial-roberta-large-sentiment
+  study_name: finetune_pooler_output_twitter-roberta-base-sentiment-latest
   n_trials: 300
   
 flair_embed:
-  model_name: soleimanian/financial-roberta-large-sentiment
+  model_name: cardiffnlp/twitter-roberta-base-sentiment-latest 
   flair_layers: "all"
   flair_layer_mean: true
 

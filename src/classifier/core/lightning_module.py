@@ -29,6 +29,8 @@ from torchmetrics.classification import (
 )
 from typing import Union, Literal
 
+from transformers import AutoModel
+
 from .metrics import ClassificationMetricsLogger
 from .nn import RNNFamily, MLP
 
@@ -53,7 +55,17 @@ class HawkishDovishClassifier(L.LightningModule):
     def __init__(
         self,
         pooling_strategy: Literal[
-            "rnn", "sbert", "cls_non_trainable", "cls_trainable", "last_layer_mean"
+            "rnn",
+            "sbert",
+            "cls",
+            "cls_pooler",
+            "cls_pooler_output",
+            "last_layer_mean",
+            "last_layer_mean_pooler",
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
         ],
         model_name: str,
         lr: float,
@@ -82,6 +94,7 @@ class HawkishDovishClassifier(L.LightningModule):
                 Dropout(nn_hparam["ff_dropout"]),
             )
             self.linear = Linear(self.nn_output_size, self.num_classes)
+            self.dropout = (Dropout(nn_hparam["ff_dropout"]),)
 
             self.layernorm = LayerNorm(self.nn_output_size)
 
@@ -110,9 +123,23 @@ class HawkishDovishClassifier(L.LightningModule):
                 self.bpl = Sequential(
                     Linear(input_size, input_size),
                     Tanh(),
-                    Linear(input_size, input_size),
                     Dropout(nn_hparam["ff_dropout"]),
                 )
+
+            elif pooling_strategy in [
+                "finetune_pooler_output",
+                "finetune_cls",
+                "finetune_last_layer_mean",
+                "finetune_last_layer_mean_pooler",
+            ]:
+                self.bpl = Sequential(
+                    Linear(input_size, input_size),
+                    Tanh(),
+                    Dropout(nn_hparam["ff_dropout"]),
+                )
+
+                self.bert = AutoModel.from_pretrained(model_name)
+
             self.linear = Linear(input_size, self.num_classes)
 
         self.softmax = Softmax(dim=-1)
@@ -172,7 +199,24 @@ class HawkishDovishClassifier(L.LightningModule):
         # logits = self.linear(outputs2)
 
         # pooling strategy: cls or cls_pooler_output or last_layer_mean
-        logits = self.linear(X)
+        # logits = self.linear(X)
+
+        # finetune
+        outputs = self.bert(**X)
+        if self.pooling_strategy == "finetune_pooler_output":
+            outputs = self.dropout(outputs.pooler_output)
+
+        elif self.pooling_strategy == "finetune_cls":
+            outputs = self.dropout(outputs.last_hidden_state[:, 0, :])
+
+        elif self.pooling_strategy == "finetune_last_layer_mean":
+            outputs = self.dropout(torch.mean(outputs.last_hidden_state, dim=1))
+
+        elif self.pooling_strategy == "finetune_last_layer_mean_pooler":
+            outputs = torch.mean(outputs.last_hidden_state, dim=1)
+            outputs = self.bpl(outputs)
+
+        logits = self.linear(outputs)
 
         return logits
 
@@ -186,8 +230,22 @@ class HawkishDovishClassifier(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        X, y = batch["embed"], batch["label"]
-        loss = F.cross_entropy(self(X), y, weight=self.class_weights.cuda())
+        if self.pooling_strategy in [
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
+        ]:
+            X = {
+                "input_ids": batch["input_ids"],
+                "attention_mask": batch["attention_mask"],
+            }
+        else:
+            X = batch["embed"]
+
+        loss = F.cross_entropy(
+            self(X), batch["label"], weight=self.class_weights.cuda()
+        )
         self.log("train/loss", loss)
 
         return loss

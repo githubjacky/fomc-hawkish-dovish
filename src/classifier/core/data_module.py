@@ -24,7 +24,7 @@ from typing import List, Dict, Literal
 
 
 class BaseDataModule(L.LightningDataModule):
-    def __init__(self, batch_size: int, embed_model_name: str):
+    def __init__(self, batch_size: int, embed_model_name: str, pooling_strategy: str):
         """
         If one only wants to use the last layers, `flair_layers` should be
         specified as "-1". Moreover, `flar_layers` = "-1,-2" means the last
@@ -41,6 +41,7 @@ class BaseDataModule(L.LightningDataModule):
         logger.info(f"embed model name: {embed_model_name}")
         self.embed_model_name = embed_model_name
         self.embed_model = None
+        self.pooling_strategy = pooling_strategy
 
     @property
     def embed_dimension(self):
@@ -99,11 +100,26 @@ class BaseDataModule(L.LightningDataModule):
             "year": tensor([2011, 2004, ...])
         }
         """
-        return {
-            "sentence": [elem["sentence"] for elem in batch],
-            "label": torch.tensor([elem["label"] for elem in batch]),
-            "embed": self.generate_embeds(batch),
-        }
+        if self.pooling_strategy in [
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
+        ]:
+            return {
+                "sentence": [elem["sentence"] for elem in batch],
+                "label": torch.tensor([elem["label"] for elem in batch]),
+                "input_ids": torch.tensor([elem["input_ids"] for elem in batch]),
+                "attention_mask": torch.tensor(
+                    [elem["attention_mask"] for elem in batch]
+                ),
+            }
+        else:
+            return {
+                "sentence": [elem["sentence"] for elem in batch],
+                "label": torch.tensor([elem["label"] for elem in batch]),
+                "embed": self.generate_embeds(batch),
+            }
 
     def train_dataloader(self):
         return DataLoader(
@@ -141,19 +157,23 @@ class CLSPoolingDataModule(BaseDataModule):
         self,
         batch_size: int = 256,
         pooling_strategy: Literal[
+            "rnn",
             "sbert",
             "cls",
             "cls_pooler",
             "cls_pooler_output",
             "last_layer_mean",
             "last_layer_mean_pooler",
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
         ] = "cls",
         embed_model_name: str = "bert-base-uncased",
     ):
-        super().__init__(batch_size, embed_model_name)
+        super().__init__(batch_size, embed_model_name, pooling_strategy)
 
         logger.info(f"pooling strategy: {pooling_strategy}")
-        self.pooling_strategy = pooling_strategy
 
     @staticmethod
     def cache_embeds_sbert(instance: Dict, model: SentenceTransformer) -> Dict:
@@ -197,7 +217,7 @@ class CLSPoolingDataModule(BaseDataModule):
 
         return instance
 
-    def cache_embeds(self, dataset) -> torch.Tensor:
+    def cache_embeds(self, dataset):
         if self.pooling_strategy == "sbert":
             model = SentenceTransformer(self.embed_model_name)
             return dataset.map(self.cache_embeds_sbert, fn_kwargs={"model": model})
@@ -225,13 +245,45 @@ class CLSPoolingDataModule(BaseDataModule):
                     fn_kwargs={"tokenizer": tokenizer, "model": model},
                 )
 
+    @staticmethod
+    def bert_tokenize(instance: Dict, tokenizer):
+        encoded_input = tokenizer(
+            instance["sentence"],
+            padding="max_length",
+            truncation=True,
+            max_length=128,
+            return_tensors="pt",
+        )
+
+        instance["input_ids"] = encoded_input["input_ids"].squeeze(0).cuda()
+        instance["attention_mask'"] = encoded_input["attention_mask"].squeeze(0).cuda()
+
+        return instance
+
+    def cache_tokens(self, dataset):
+        tokenizer = AutoTokenizer.from_pretrained(self.embed_model_name)
+        return dataset.map(
+            self.bert_tokenize,
+            fn_kwargs={"tokenizer": tokenizer},
+        )
+
     def prepare_data(self) -> None:
         dataset = load_dataset("gtfintechlab/fomc_communication")
         train_dataset = dataset["train"]
         test_dataset = dataset["test"]
 
-        self.train_dataset = self.cache_embeds(train_dataset)
-        self.test_dataset = self.cache_embeds(test_dataset)
+        if self.pooling_strategy in [
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
+        ]:
+            self.train_dataset = self.cache_tokens(train_dataset)
+            self.test_dataset = self.cache_tokens(test_dataset)
+
+        else:
+            self.train_dataset = self.cache_embeds(train_dataset)
+            self.test_dataset = self.cache_embeds(test_dataset)
 
         self.len_train_dataset = len(self.train_dataset)
         self.len_test_dataset = len(self.test_dataset)
@@ -256,7 +308,7 @@ class RNNPoolingDataModule(BaseDataModule):
         flair_layers: str = "-1",
         flair_layer_mean=True,
     ):
-        super().__init__(batch_size, embed_model_name)
+        super().__init__(batch_size, embed_model_name, "rnn")
 
         self.embed_model = TransformerWordEmbeddings(
             embed_model_name, layers=flair_layers, layer_mean=flair_layer_mean

@@ -37,14 +37,25 @@ class Tuner:
         #     "cls_pooler",
         #     "last_layer_mean_pooler",
         # ]:
-        elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+        elif self.cfg.pooling_strategy in [
+            "cls_pooler",
+            "last_layer_mean_pooler",
+            "finetune_pooler_output",
+            "finetune_cls",
+            "finetune_last_layer_mean",
+            "finetune_last_layer_mean_pooler",
+        ]:
             nn_hparam = self.ff_hparam(trial) | nn_hparam
 
         lr = trial.suggest_float("lr", 3e-6, 3e-3)
 
         model = HawkishDovishClassifier(
             self.cfg.pooling_strategy,
-            self.cfg.nn,
+            (
+                self.cfg.nn
+                if self.cfg.pooling_strategy == "rnn"
+                else self.cfg.flair_embed.model_name
+            ),
             lr,
             dm.sklearn_class_weight,
             dm.embed_dimension,

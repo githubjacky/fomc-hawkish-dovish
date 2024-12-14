@@ -78,7 +78,7 @@ def setup_model(dm, cfg: DictConfig):
 
     model = HawkishDovishClassifier(
         cfg.pooling_strategy,
-        cfg.nn,
+        cfg.nn if cfg.pooling_strategy == "rnn" else cfg.flair_embed.model_name,
         cfg.lr,
         dm.sklearn_class_weight,
         dm.embed_dimension,
