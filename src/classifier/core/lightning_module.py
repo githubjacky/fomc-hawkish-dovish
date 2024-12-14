@@ -74,8 +74,8 @@ class HawkishDovishClassifier(L.LightningModule):
             self.nn = get_nn(model_name, input_size, **nn_hparam)
             self.nn_output_size = self.nn.output_size
 
-            # classification layers (ff-> linear)
-            self.ff = Sequential(
+            # BERT pooling layer
+            self.bpl = Sequential(
                 Linear(self.nn_output_size, self.nn_output_size),
                 Tanh(),
                 Linear(self.nn_output_size, self.nn_output_size),
@@ -87,16 +87,27 @@ class HawkishDovishClassifier(L.LightningModule):
 
         else:
             # if pooling_strategy == "sbert":
-            #     self.ff = Sequential(
+            #     self.proj = Sequential(
             #         Linear(input_size, nn_hparam["ff_input_size"]),
             #         ReLU(),
-            #         # Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+            #     )
+            #
+            #     self.ff = Sequential(
+            #         Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+            #         ReLU(),
+            #     )
+            #
+            #     self.ff_withdropout = Sequential(
+            #         Linear(nn_hparam["ff_input_size"], nn_hparam["ff_input_size"]),
+            #         ReLU(),
             #         Dropout(nn_hparam["ff_dropout"]),
             #     )
+            #
             #     self.linear = Linear(nn_hparam["ff_input_size"], self.num_classes)
+            #
             # else:
             if pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
-                self.ff = Sequential(
+                self.bpl = Sequential(
                     Linear(input_size, input_size),
                     Tanh(),
                     Linear(input_size, input_size),
@@ -144,6 +155,21 @@ class HawkishDovishClassifier(L.LightningModule):
         # pooling strategy: cls_pooler or last_layer_mean_pooler
         # outputs = self.ff(X)
         # logits = self.linear(outputs)
+
+        # mlp for multi-qa-mpnet-base-dot-v1
+        # projected = self.proj(X)
+        #
+        # outputs = self.ff(projected)
+        # outputs = self.ff(outputs)
+        # outputs = self.ff(outputs)
+        # outputs1 = self.ff_withdropout(outputs) + projected
+        #
+        # outputs = self.ff(outputs1)
+        # outputs = self.ff(outputs)
+        # outputs = self.ff(outputs)
+        # outputs2 = self.ff_withdropout(outputs) + outputs1
+        #
+        # logits = self.linear(outputs2)
 
         # pooling strategy: cls or cls_pooler_output or last_layer_mean
         logits = self.linear(X)

@@ -32,12 +32,12 @@ class Tuner:
                 | self.ff_hparam(trial)
                 | nn_hparam
             )
-        elif self.cfg.pooling_strategy in [
-            "sbert",
-            "cls_pooler",
-            "last_layer_mean_pooler",
-        ]:
-            # elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+        # elif self.cfg.pooling_strategy in [
+        #     "sbert",
+        #     "cls_pooler",
+        #     "last_layer_mean_pooler",
+        # ]:
+        elif self.cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
             nn_hparam = self.ff_hparam(trial) | nn_hparam
 
         lr = trial.suggest_float("lr", 3e-6, 3e-3)

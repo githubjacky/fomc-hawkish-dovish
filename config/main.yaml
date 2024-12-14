@@ -4,22 +4,22 @@ defaults:
 
 # options: rnn, sbert, cls, cls_pooler, cls_pooler_output, last_layer_mean, last_layer_mean_pooler
 # pooler means to train the BERT pooling layer
-pooling_strategy: cls
+pooling_strategy: last_layer_mean
 
-lr: 0.0011362651459171757
-batch_size: 265
+lr: 0.0005367370559450229
+batch_size: 1263
 
 tuning:
-  study_name: cls_distilroberta-finetuned-financial-text-classification
+  study_name: llm_financial-roberta-large-sentiment
   n_trials: 300
   
 flair_embed:
-  model_name: nickmuchi/distilroberta-finetuned-financial-text-classification
+  model_name: soleimanian/financial-roberta-large-sentiment
   flair_layers: "all"
   flair_layer_mean: true
 
 sbert_embed:
-  model_name: sentence-transformers/multi-qa-mpnet-base-dot-v1
+  model_name: FinLang/finance-embeddings-investopedia
 
 nn: LSTM
 # should adjust only in sentence-level classification
@@ -62,5 +62,5 @@ MLP:
   output_size: 128
 
 ff:
-  ff_input_size: 256
-  ff_dropout: 0.21807975814570435
+  ff_input_size: 1378
+  ff_dropout: 0.22998956431876594
