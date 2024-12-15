@@ -69,8 +69,15 @@ def setup_model(dm, cfg: DictConfig):
             cfg.ff
         )
 
-    elif cfg.pooling_strategy in ["sbert", "cls_pooler", "last_layer_mean_pooler"]:
-        # elif cfg.pooling_strategy in ["cls_pooler", "last_layer_mean_pooler"]:
+    elif cfg.pooling_strategy in [
+        # "sbert",
+        "cls_pooler",
+        "last_layer_mean_pooler",
+        "finetune_pooler_output",
+        "finetune_cls",
+        "finetune_last_layer_mean",
+        "finetune_last_layer_mean_pooler",
+    ]:
         nn_hparam = OmegaConf.to_container(cfg.ff)
 
     else:

@@ -138,7 +138,7 @@ class HawkishDovishClassifier(L.LightningModule):
                     Dropout(nn_hparam["ff_dropout"]),
                 )
 
-                self.bert = AutoModel.from_pretrained(model_name)
+                self.bert = AutoModel.from_pretrained(model_name).train()
 
             self.linear = Linear(input_size, self.num_classes)
 

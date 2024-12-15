@@ -100,6 +100,19 @@ class BaseDataModule(L.LightningDataModule):
             "year": tensor([2011, 2004, ...])
         }
         """
+        # Debug prints
+
+        print(batch[1].keys())
+
+        print("First input_ids shape:", torch.tensor(batch[0]["input_ids"]).shape)
+        print(
+            "All input_ids shapes:",
+            [torch.tensor(elem["input_ids"]).shape for elem in batch],
+        )
+        print(
+            "All attention_mask shapes:",
+            [elem["attention_mask"].shape for elem in batch],
+        )
         if self.pooling_strategy in [
             "finetune_pooler_output",
             "finetune_cls",
@@ -249,14 +262,14 @@ class CLSPoolingDataModule(BaseDataModule):
     def bert_tokenize(instance: Dict, tokenizer):
         encoded_input = tokenizer(
             instance["sentence"],
-            padding="max_length",
-            truncation=True,
-            max_length=128,
-            return_tensors="pt",
+            padding="max_length",  # Pad shorter sequences to match longest
+            truncation=True,  # Truncate sequences that are too long
+            max_length=128,  # Maximum sequence length
+            return_tensors=None,  # Return PyTorch tensors
         )
 
-        instance["input_ids"] = encoded_input["input_ids"].squeeze(0).cuda()
-        instance["attention_mask'"] = encoded_input["attention_mask"].squeeze(0).cuda()
+        instance["input_ids"] = encoded_input["input_ids"]
+        instance["attention_mask"] = encoded_input["attention_mask"]
 
         return instance
 

@@ -11,7 +11,7 @@ lr: 0.0005367370559450229
 batch_size: 1263
 
 tuning:
-  study_name: finetune_pooler_output_twitter-roberta-base-sentiment-latest
+  study_name: finetune_pooler_output_twitter-roberta-base-sentiment-latest_v3
   n_trials: 300
   
 flair_embed:
