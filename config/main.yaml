@@ -7,15 +7,15 @@ defaults:
 # (fine-tune) options: finetune_pooler_output, finetune_cls finetune_last_layer_mean finetune_last_layer_mean_pooler
 pooling_strategy: finetune_pooler_output
 
-lr: 0.0005367370559450229
-batch_size: 1263
+lr: 0.05367370559450229
+batch_size: 512
 
 tuning:
   study_name: finetune_pooler_output_twitter-roberta-base-sentiment-latest_v3
   n_trials: 300
   
 flair_embed:
-  model_name: cardiffnlp/twitter-roberta-base-sentiment-latest 
+  model_name: cardiffnlp/twitter-roberta-base-sentiment-latest
   flair_layers: "all"
   flair_layer_mean: true
 
@@ -30,7 +30,7 @@ random_state: 1126
 early_stop:
   monitor: val/macro_avg_prec
   mode: max
-  patience: 5  # log every `patience * check_val_every_n_epoch` epochs
+  patience: 20  # log every `patience * check_val_every_n_epoch` epochs
 
 model_check_point:
   monitor: val/macro_avg_prec

@@ -102,17 +102,6 @@ class BaseDataModule(L.LightningDataModule):
         """
         # Debug prints
 
-        print(batch[1].keys())
-
-        print("First input_ids shape:", torch.tensor(batch[0]["input_ids"]).shape)
-        print(
-            "All input_ids shapes:",
-            [torch.tensor(elem["input_ids"]).shape for elem in batch],
-        )
-        print(
-            "All attention_mask shapes:",
-            [elem["attention_mask"].shape for elem in batch],
-        )
         if self.pooling_strategy in [
             "finetune_pooler_output",
             "finetune_cls",
@@ -139,9 +128,9 @@ class BaseDataModule(L.LightningDataModule):
             self.train_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=4,
-            # pin_memory=True,
-            persistent_workers=True,
+            # num_workers=4,
+            pin_memory=True,
+            # persistent_workers=True,
         )
 
     def val_dataloader(self):
@@ -149,9 +138,9 @@ class BaseDataModule(L.LightningDataModule):
             self.val_data,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=4,
-            # pin_memory=True,
-            persistent_workers=True,
+            # num_workers=4,
+            pin_memory=True,
+            # persistent_workers=True,
         )
 
     def test_dataloader(self):
@@ -159,9 +148,9 @@ class BaseDataModule(L.LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            num_workers=4,
-            # pin_memory=True,
-            persistent_workers=True,
+            # num_workers=4,
+            pin_memory=True,
+            # persistent_workers=True,
         )
 
 
@@ -269,15 +258,18 @@ class CLSPoolingDataModule(BaseDataModule):
         )
 
         instance["input_ids"] = encoded_input["input_ids"]
+
         instance["attention_mask"] = encoded_input["attention_mask"]
 
         return instance
 
     def cache_tokens(self, dataset):
         tokenizer = AutoTokenizer.from_pretrained(self.embed_model_name)
+
         return dataset.map(
             self.bert_tokenize,
             fn_kwargs={"tokenizer": tokenizer},
+            # load_from_cache_file=False,
         )
 
     def prepare_data(self) -> None:

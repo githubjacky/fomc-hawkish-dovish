@@ -78,6 +78,7 @@ class HawkishDovishClassifier(L.LightningModule):
         """
         super().__init__()
 
+        self.pooling_strategy = pooling_strategy
         self.lr = lr
         self.class_weights = class_weights
         self.nn_hparam = nn_hparam
@@ -94,7 +95,7 @@ class HawkishDovishClassifier(L.LightningModule):
                 Dropout(nn_hparam["ff_dropout"]),
             )
             self.linear = Linear(self.nn_output_size, self.num_classes)
-            self.dropout = (Dropout(nn_hparam["ff_dropout"]),)
+            self.dropout = Dropout(nn_hparam["ff_dropout"])
 
             self.layernorm = LayerNorm(self.nn_output_size)
 
@@ -139,6 +140,7 @@ class HawkishDovishClassifier(L.LightningModule):
                 )
 
                 self.bert = AutoModel.from_pretrained(model_name).train()
+                self.dropout = Dropout(nn_hparam["ff_dropout"])
 
             self.linear = Linear(input_size, self.num_classes)
 
@@ -221,7 +223,7 @@ class HawkishDovishClassifier(L.LightningModule):
         return logits
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), self.lr)
+        return torch.optim.AdamW(self.parameters(), self.lr)
 
     def on_train_start(self):
         self.logger.log_hyperparams(
@@ -229,7 +231,7 @@ class HawkishDovishClassifier(L.LightningModule):
             | self.nn_hparam
         )
 
-    def training_step(self, batch, batch_idx):
+    def get_logit(self, batch):
         if self.pooling_strategy in [
             "finetune_pooler_output",
             "finetune_cls",
@@ -243,16 +245,20 @@ class HawkishDovishClassifier(L.LightningModule):
         else:
             X = batch["embed"]
 
+        return self(X)
+
+    def training_step(self, batch, batch_idx):
         loss = F.cross_entropy(
-            self(X), batch["label"], weight=self.class_weights.cuda()
+            self.get_logit(batch), batch["label"], weight=self.class_weights.cuda()
         )
         self.log("train/loss", loss)
 
         return loss
 
     def validation_step(self, batch, batch_idx) -> None:
-        X, y = batch["embed"], batch["label"]
-        logits = self(X)
+        logits = self.get_logit(batch)
+        y = batch["label"]
+
         loss = F.cross_entropy(logits, y)
 
         # to prevent the warning: Trying to infer the `batch_size` from an ambiguous collection
@@ -283,10 +289,10 @@ class HawkishDovishClassifier(L.LightningModule):
             self.log(f"val/recall_{class_type}", recall)
 
     def test_step(self, batch, batch_idx) -> None:
-        X, y = batch["embed"], batch["label"]
+        y = batch["label"]
 
         # metrics calculation
-        probs = self.softmax(self(X))
+        probs = self.softmax(self.get_logit(batch))
         # self.pr_curve.update(probs, y)
 
         self.macro_ap.update(probs, y)
